@@ -1,7 +1,54 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Web Modeler" exporterVersion="91a0bd8" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.10.0">
-  <bpmn:process id="Process_0uy7y43" name="strategic-marketplace" isExecutable="true" />
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Web Modeler" exporterVersion="91a0bd8" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.10.0">
+  <bpmn:collaboration id="Collaboration_0n3855e">
+    <bpmn:participant id="Participant_1hov6vn" name="Marketplace" processRef="Process_1o42hvg" />
+    <bpmn:participant id="Participant_0girchk" name="Customer" processRef="Process_1cs0ryh" />
+    <bpmn:participant id="Participant_0ujf9qk" name="Producer" processRef="Process_0sv4yh5" />
+    <bpmn:participant id="Participant_19w77yy" name="Payment Provider" />
+    <bpmn:participant id="Participant_06miksk" name="Organic Certification Service" />
+    <bpmn:participant id="Participant_1b659gu" name="Notification Service" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_1o42hvg" isExecutable="true">
+    <bpmn:laneSet id="LaneSet_1759x1f">
+      <bpmn:lane id="Lane_1t6hrm3" name="Marketplace Administrator" />
+      <bpmn:lane id="Lane_077oc4o" name="Marketplace Platform" />
+    </bpmn:laneSet>
+  </bpmn:process>
+  <bpmn:process id="Process_1cs0ryh" isExecutable="false" />
+  <bpmn:process id="Process_0sv4yh5" isExecutable="false" />
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
-    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_0uy7y43" />
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_0n3855e">
+      <bpmndi:BPMNShape id="Participant_1hov6vn_di" bpmnElement="Participant_1hov6vn" isHorizontal="true">
+        <dc:Bounds x="140" y="420" width="980" height="670" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_1t6hrm3_di" bpmnElement="Lane_1t6hrm3" isHorizontal="true">
+        <dc:Bounds x="170" y="420" width="950" height="365" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_077oc4o_di" bpmnElement="Lane_077oc4o" isHorizontal="true">
+        <dc:Bounds x="170" y="785" width="950" height="305" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Participant_0girchk_di" bpmnElement="Participant_0girchk" isHorizontal="true">
+        <dc:Bounds x="140" y="80" width="980" height="280" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_1yl3egk" bpmnElement="Participant_0ujf9qk" isHorizontal="true">
+        <dc:Bounds x="140" y="1130" width="980" height="230" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_1llikyn" bpmnElement="Participant_06miksk" isHorizontal="true">
+        <dc:Bounds x="450" y="1410" width="370" height="60" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Participant_1q54nqq_di" bpmnElement="Participant_19w77yy" isHorizontal="true">
+        <dc:Bounds x="140" y="1410" width="310" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_02cxaxa" bpmnElement="Participant_1b659gu" isHorizontal="true">
+        <dc:Bounds x="820" y="1410" width="300" height="60" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </bpmn:definitions>
