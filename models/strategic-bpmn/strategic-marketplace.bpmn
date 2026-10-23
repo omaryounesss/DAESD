@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Web Modeler" exporterVersion="91a0bd8" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.10.0">
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Web Modeler" exporterVersion="f127538" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.10.0">
   <bpmn:collaboration id="Collaboration_0n3855e">
     <bpmn:participant id="Participant_1hov6vn" name="Marketplace" processRef="Process_1o42hvg" />
     <bpmn:participant id="Participant_0girchk" name="Customer" processRef="Process_1cs0ryh" />
@@ -10,45 +10,125 @@
   </bpmn:collaboration>
   <bpmn:process id="Process_1o42hvg" isExecutable="true">
     <bpmn:laneSet id="LaneSet_1759x1f">
-      <bpmn:lane id="Lane_1t6hrm3" name="Marketplace Administrator" />
-      <bpmn:lane id="Lane_077oc4o" name="Marketplace Platform" />
+      <bpmn:lane id="Lane_1t6hrm3" name="Marketplace Administrator">
+        <bpmn:flowNodeRef>Activity_0xdohwe</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_077oc4o" name="Marketplace Platform">
+        <bpmn:flowNodeRef>Activity_0hzztq9</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_1ln5wjn</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_0j8q2o4</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_1psklf3</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_0xl5lb0</bpmn:flowNodeRef>
+      </bpmn:lane>
     </bpmn:laneSet>
+    <bpmn:subProcess id="Activity_0hzztq9" name="Manage product listings" />
+    <bpmn:subProcess id="Activity_1ln5wjn" name="Provide product catalogue and search" />
+    <bpmn:subProcess id="Activity_0j8q2o4" name="Process orders and payments" />
+    <bpmn:subProcess id="Activity_1psklf3" name="Settle producer payments" />
+    <bpmn:subProcess id="Activity_0xl5lb0" name="Manage inventory and availability" />
+    <bpmn:subProcess id="Activity_0xdohwe" name="Manage food-quality incidents" />
   </bpmn:process>
-  <bpmn:process id="Process_1cs0ryh" isExecutable="false" />
-  <bpmn:process id="Process_0sv4yh5" isExecutable="false" />
+  <bpmn:process id="Process_1cs0ryh" isExecutable="false">
+    <bpmn:task id="Activity_0wp9o2o" name="Browse and order produce" />
+    <bpmn:task id="Activity_16chtg5" name="Collect or receive order" />
+    <bpmn:task id="Activity_08640cy" name="Report quality issue" />
+  </bpmn:process>
+  <bpmn:process id="Process_0sv4yh5" isExecutable="false">
+    <bpmn:task id="Activity_19ahh9q" name="Submit and update products" />
+    <bpmn:task id="Activity_022qfaw" name="Fulfil orders" />
+    <bpmn:task id="Activity_03a8anb" name="Receive settlement" />
+  </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_0n3855e">
       <bpmndi:BPMNShape id="Participant_1hov6vn_di" bpmnElement="Participant_1hov6vn" isHorizontal="true">
         <dc:Bounds x="140" y="420" width="980" height="670" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Lane_1t6hrm3_di" bpmnElement="Lane_1t6hrm3" isHorizontal="true">
-        <dc:Bounds x="170" y="420" width="950" height="365" />
+      <bpmndi:BPMNShape id="Lane_077oc4o_di" bpmnElement="Lane_077oc4o" isHorizontal="true">
+        <dc:Bounds x="170" y="770" width="950" height="320" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Lane_077oc4o_di" bpmnElement="Lane_077oc4o" isHorizontal="true">
-        <dc:Bounds x="170" y="785" width="950" height="305" />
+      <bpmndi:BPMNShape id="Lane_1t6hrm3_di" bpmnElement="Lane_1t6hrm3" isHorizontal="true">
+        <dc:Bounds x="170" y="420" width="950" height="350" />
         <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1p0bhbi_di" bpmnElement="Activity_0hzztq9">
+        <dc:Bounds x="400" y="830" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0msq0in_di" bpmnElement="Activity_1ln5wjn">
+        <dc:Bounds x="590" y="830" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_1i259eh" bpmnElement="Activity_0j8q2o4">
+        <dc:Bounds x="780" y="830" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1mz46oj_di" bpmnElement="Activity_1psklf3">
+        <dc:Bounds x="960" y="830" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1ef96zv_di" bpmnElement="Activity_0xl5lb0">
+        <dc:Bounds x="400" y="970" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0pg4r8p_di" bpmnElement="Activity_0xdohwe">
+        <dc:Bounds x="960" y="490" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Participant_0girchk_di" bpmnElement="Participant_0girchk" isHorizontal="true">
         <dc:Bounds x="140" y="80" width="980" height="280" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1a78lkn_di" bpmnElement="Activity_0wp9o2o">
+        <dc:Bounds x="590" y="200" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0fxvwjc_di" bpmnElement="Activity_16chtg5">
+        <dc:Bounds x="780" y="200" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0sfkfb2_di" bpmnElement="Activity_08640cy">
+        <dc:Bounds x="960" y="200" width="100" height="80" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="BPMNShape_1yl3egk" bpmnElement="Participant_0ujf9qk" isHorizontal="true">
         <dc:Bounds x="140" y="1130" width="980" height="230" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="BPMNShape_1llikyn" bpmnElement="Participant_06miksk" isHorizontal="true">
-        <dc:Bounds x="450" y="1410" width="370" height="60" />
-        <bpmndi:BPMNLabel />
+      <bpmndi:BPMNShape id="Activity_0byysel_di" bpmnElement="Activity_19ahh9q">
+        <dc:Bounds x="400" y="1180" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1kz6l66_di" bpmnElement="Activity_022qfaw">
+        <dc:Bounds x="780" y="1180" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0cqvxob_di" bpmnElement="Activity_03a8anb">
+        <dc:Bounds x="960" y="1180" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Participant_1q54nqq_di" bpmnElement="Participant_19w77yy" isHorizontal="true">
         <dc:Bounds x="140" y="1410" width="310" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_1llikyn" bpmnElement="Participant_06miksk" isHorizontal="true">
+        <dc:Bounds x="450" y="1410" width="370" height="60" />
+        <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="BPMNShape_02cxaxa" bpmnElement="Participant_1b659gu" isHorizontal="true">
         <dc:Bounds x="820" y="1410" width="300" height="60" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
     </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_0in65jo">
+    <bpmndi:BPMNPlane id="BPMNPlane_0pvu2zc" bpmnElement="Activity_0hzztq9" />
+  </bpmndi:BPMNDiagram>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_0g2dktv">
+    <bpmndi:BPMNPlane id="BPMNPlane_1q70kxz" bpmnElement="Activity_1ln5wjn" />
+  </bpmndi:BPMNDiagram>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1d4x97y">
+    <bpmndi:BPMNPlane id="BPMNPlane_159az1n" bpmnElement="Activity_0j8q2o4" />
+  </bpmndi:BPMNDiagram>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_0ew5y3i">
+    <bpmndi:BPMNPlane id="BPMNPlane_060yl38" bpmnElement="Activity_1psklf3" />
+  </bpmndi:BPMNDiagram>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_044ywvy">
+    <bpmndi:BPMNPlane id="BPMNPlane_0p63kzt" bpmnElement="Activity_0xl5lb0" />
+  </bpmndi:BPMNDiagram>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_15fpky8">
+    <bpmndi:BPMNPlane id="BPMNPlane_1tjblr5" bpmnElement="Activity_0xdohwe" />
   </bpmndi:BPMNDiagram>
 </bpmn:definitions>
