@@ -59,15 +59,30 @@ Because the marketplace sells food it does not handle, **trust and food safety**
 
 These dependencies are the starting point for the i\* Strategic Dependency model in Sprint 2 (owner: Mohamed Alabweh, Member 2).
 
-| Depender | Depends on | For |
+The *Type* column gives the i\* dependum type, which decides how each dependency is drawn in the SD model: a **goal** is an outcome that is either achieved or not, a **softgoal** is a quality with no clear-cut criteria, a **task** is a specific activity, and a **resource** is information or a physical item.
+
+| Depender | Depends on | For | Type |
+|---|---|---|---|
+| Customer | Producer | Accurate product, allergen and origin information | Softgoal |
+| Customer | Marketplace | Honest (verified) organic claims | Softgoal |
+| Customer | Marketplace | Alerts if a product they bought is unsafe | Resource |
+| Marketplace | Producer | Up-to-date stock and season data | Resource |
+| Marketplace | Producer | Information during quality incidents | Resource |
+| Marketplace | Organic-certification service | Organic claims verified | Goal |
+| Marketplace | Payment provider | Payments collected and payouts made | Goal |
+| Marketplace | Notification service | Reliable delivery of confirmations and alerts | Softgoal |
+| Producer | Marketplace | Correct payment of their share, minus 5% commission | Goal |
+
+### 3.4 Tensions between stakeholder goals
+
+These conflicts are the trade-offs the i\* Strategic Rationale model reasons about. Each becomes a decision inside an actor's boundary, with contribution links to the softgoals it helps or hurts.
+
+| Tension | Stakeholders | How our design responds |
 |---|---|---|
-| Customer | Producer | Accurate product, allergen and origin information |
-| Customer | Marketplace | Honest (verified) organic claims; alerts if a product they bought is unsafe |
-| Marketplace | Producer | Up-to-date stock and season data; cooperation during incidents |
-| Marketplace | Organic-certification service | Verification of organic claims |
-| Marketplace | Payment provider | Secure payment collection and payouts |
-| Marketplace | Notification service | Reliable delivery of confirmations and alerts |
-| Producer | Marketplace | Correct payment of their share, minus 5% commission |
+| Producers want to list quickly; the marketplace needs complete, valid data. | Producer vs Marketplace | Strict validation of mandatory fields only, with clear correction messages (BR-01). |
+| Waiting for an unavailable certification service protects trust but delays sales. | Customer, Producer vs Marketplace | Retry, then administrator review; never published as organic without a positive result (BR-02, BR-03). |
+| Producers also sell offline, so platform stock can drift from real stock. | Producer vs Customer | Automatically unavailable at zero stock, plus low-stock alerts (BR-04). |
+| Traceability needs customer data; data protection limits what is kept. | Marketplace vs Customer | Store only what traceability needs, for a defined period (BR-10). |
 
 ## 4. Major business processes
 
@@ -158,7 +173,8 @@ The administrator is accountable for every marketplace process even where the pl
 These considerations shape the processes above and are evaluated further in Sprint 3.
 
 - **Food information for distance selling.** Food sold online must have its mandatory food information, including allergens, available to the consumer before the purchase is concluded and again at delivery (Regulation (EU) No 1169/2011, as retained in UK law; Bridges and Tingle, 2020). This is why P1 must capture allergen and product details before a product can be published (BR-01).
-- **Organic claims.** In the UK, "organic" can only be applied to products whose production and processing have been inspected and certified by an approved control body (Business Companion, no date). This justifies the certification check in P1 (BR-02).
+- **Organic claims.** In the UK, "organic" can only be applied to products whose production and processing have been inspected and certified by an approved control body (Regulation (EU) 2018/848, as retained in UK law; Business Companion, no date). This justifies the certification check in P1 (BR-02).
+- **Traceability.** Food businesses must be able to identify who supplied a food and to whom they supplied it, and must withdraw unsafe food from sale (Regulation (EC) No 178/2002, Articles 18–19, as retained in UK law). This is why P1 and P4 write to the traceability records and P7 can suspend a product (BR-10, BR-11).
 - **Personal data.** Traceability (BR-10) requires storing who bought what. Under the UK GDPR and the Data Protection Act 2018, this data must be limited to what is needed, kept secure and retained only as long as necessary.
 - **Payments.** Card handling is delegated to the payment provider, so the marketplace does not store payment card data. A sandbox or simulated service is used for this assessment.
 - **Social and professional.** Supporting small local producers, being honest about product claims and responding quickly to safety issues are central to customer trust. Processes must be auditable so that decisions, such as why a product was suspended, can be explained.
@@ -194,4 +210,8 @@ Business Companion (no date) *Labelling and describing organic food*. Available 
 
 Data Protection Act 2018, c. 12. Available from: https://www.legislation.gov.uk/ukpga/2018/12/contents [Accessed 25 October 2026].
 
+Regulation (EC) No 178/2002 of the European Parliament and of the Council of 28 January 2002 laying down the general principles and requirements of food law (assimilated law). Available from: https://www.legislation.gov.uk/eur/2002/178/contents [Accessed 25 October 2026].
+
 Regulation (EU) No 1169/2011 of the European Parliament and of the Council of 25 October 2011 on the provision of food information to consumers (assimilated law). Available from: https://www.legislation.gov.uk/eur/2011/1169/contents [Accessed 25 October 2026].
+
+Regulation (EU) 2018/848 of the European Parliament and of the Council of 30 May 2018 on organic production and labelling of organic products (assimilated law). Available from: https://www.legislation.gov.uk/eur/2018/848/contents [Accessed 25 October 2026].
