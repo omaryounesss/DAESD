@@ -39,6 +39,7 @@ DAESD/
 
 ## Project management
 
+- **Kanban board:** [DAESD – Use Case 1 Board](https://github.com/users/MOHAMEDAHMED947/projects/1)
 - **Backlog:** [GitHub Issues](https://github.com/omaryounesss/DAESD/issues), labelled by priority, type and member
 - **Sprints:** [GitHub Milestones](https://github.com/omaryounesss/DAESD/milestones) (Sprint 1, 2, 3)
 - **Sprint plan:** [docs/sprint-plan.md](docs/sprint-plan.md)
