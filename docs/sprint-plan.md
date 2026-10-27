@@ -1,55 +1,45 @@
 # Sprint Plan
 
-Use Case 1: Producer Product Listing and Inventory Management.
-Each task below is a GitHub Issue, attached to its sprint milestone and labelled with its owner and priority.
+**Single source for the backlog:** [selected-functionalities.md §6](selected-functionalities.md) (26 items, IDs E1-01 to E4-05).
+Each backlog item is a GitHub Issue with the **same ID in its title**, a MoSCoW label, a story-point label, an owner and a sprint milestone.
 
-**Backlog:** https://github.com/omaryounesss/DAESD/issues
-**Milestones:** https://github.com/omaryounesss/DAESD/milestones
+| Tool | Link |
+|---|---|
+| Kanban board | https://github.com/users/MOHAMEDAHMED947/projects/1 *(update if the number differs)* |
+| Issues | https://github.com/omaryounesss/DAESD/issues |
+| Milestones (sprints) | https://github.com/omaryounesss/DAESD/milestones |
 
-## Sprint 1: Strategic analysis and project setup (12 Oct – 1 Nov 2026)
+## How we plan and track
 
-| Task | Owner | Priority |
+- **Planning:** at the start of each sprint we break the brief's sprint requirements into issues, each with a MoSCoW priority, story points, an owner and a sprint milestone.
+- **Board columns:** To do → In progress → In review → Done.
+- **Tracking:** cards move across the board. Each commit references its issue (`#12`), and progress is reviewed at the weekly stand-up and the Sunday meeting.
+- **Definition of Done:** committed, reviewed by another member, linked to its issue, and for Camunda items demonstrated running.
+
+## Sprints
+
+| Sprint | Dates | Goal | Backlog items |
+|---|---|---|---|
+| 1 | 12 Oct – 1 Nov 2026 | Strategic analysis and project setup | E3-01, E3-02; PM-01 to PM-05 |
+| 2 | 2 Nov – 22 Nov 2026 | i* and operational models; first automation | E1-01 to E1-04, E1-06; E2-01 to E2-03; E3-03 to E3-06; E4-01 |
+| 3 | 23 Nov – 10 Dec 2026 | Full automation, exceptions, integration, demo | E1-05, E1-07, E1-08; E2-04 to E2-07; E4-02 to E4-05 |
+
+## Project-management items (Sprint 1)
+
+| ID | Item | Owner |
 |---|---|---|
-| Strategic BPMN model of the whole marketplace | Member 1 | High |
-| Identify major business processes | Member 1 | High |
-| Stakeholder and responsibility analysis | Member 2 | High |
-| Scope the two candidate major functionalities | Members 1, 3 | High |
-| Agree the two functionalities with the module team | All | High |
-| Initial product backlog and sprint plan | Member 5 | High |
-| Repository setup: README, folders, .gitignore | Member 5 | High |
-| Meeting notes 01–02 | Member 5 | Medium |
-| Start i* modelling (not assessed until Sprint 2) | Member 2 | Low |
+| PM-01 | Repository setup: README, folders, .gitignore | M5 |
+| PM-02 | Initial product backlog, milestones and Kanban board | M5 |
+| PM-03 | Meeting notes 01–03 | M5 |
+| PM-04 | Agree F1 and F2 with the module team | All |
+| PM-05 | Sprint 1 review: presentation and ZIP submission | All (M5 submits) |
 
-## Sprint 2: Socio-technical and operational modelling, initial automation (2 Nov – 22 Nov 2026)
+## Members
 
-| Task | Owner | Priority |
+| | Member | Role |
 |---|---|---|
-| i* Strategic Dependency (SD) model | Member 2 | High |
-| i* Strategic Rationale (SR) model | Member 2 | High |
-| Operational BPMN: product listing, validation and publication | Member 3 | High |
-| Operational BPMN: inventory and seasonal availability | Member 3 | High |
-| Traceability between i*, strategic and operational BPMN | Members 1, 2, 3 | Medium |
-| Camunda 8 process: product listing | Member 4 | High |
-| Camunda 8 process: inventory and seasonal availability | Member 4 | High |
-| Camunda Forms for producer user tasks | Member 4 | High |
-| Simulated organic-certification service | Member 5 | High |
-| Connect certification service to Camunda service task | Members 5, 4 | High |
-
-## Sprint 3: Final implementation, integration and demonstration (23 Nov – 10 Dec 2026)
-
-| Task | Owner | Priority |
-|---|---|---|
-| End-to-end execution of both processes | Member 4 | High |
-| Finalise Forms and form-to-process data flow | Member 4 | High |
-| Service integration and failure handling | Members 4, 5 | High |
-| Test invalid data, rejected certification and service-unavailable paths | Member 5 (Member 3 checks BPMN) | High |
-| Legal, ethical, social and professional (LESP) evaluation | Member 2 (reviewed by Member 1) | Medium |
-| Model consistency and Task 2 readiness | Members 1–4 (Member 5 documents) | Medium |
-| Final README, testing evidence and repository tidy-up | Member 5 | Medium |
-| Signed contribution matrix | All (Member 5 leads) | High |
-| Demo preparation and Q&A rehearsal | All | High |
-
-## Recurring
-
-- Weekly meeting every Sunday from 17:00 to 19:00, with notes in `docs/meetings/` (Member 5)
-- Weekly stand-ups: every member prepares their own update
+| M1 | Omar Younes | Strategic analysis and strategic BPMN |
+| M2 | Mohamed Alabweh | Stakeholders, i* models, LESP |
+| M3 | Zaineldin Sharaf | Functional scope, operational BPMN |
+| M4 | Omar Abdelaaty | Camunda processes, Forms |
+| M5 | Mohamed Hamdy | Simulated services, testing, backlog and repository |
