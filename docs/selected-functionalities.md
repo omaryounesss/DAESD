@@ -6,7 +6,7 @@
 | **Use case** | Use Case 1 – Producer Product Listing and Inventory Management |
 | **Authors** | Omar (Member 1), Zain (Member 3) (functionality scoping) |
 | **Sprint** | 1 – Strategic Process Analysis and Project Setup |
-| **Status** | Proposed – awaiting agreement with the module team |
+| **Status** | Agreed |
 | **Related artefacts** | `models/strategic-bpmn/strategic-marketplace.bpmn` · `docs/case-study-analysis.md` |
 
 ---
@@ -111,8 +111,8 @@ The same names are used at every level so the link from the strategic model to t
 | Item | Status |
 |---|---|
 | Use Case 1 selected by the group | Agreed |
-| Two functionalities as scoped above | Awaiting module team agreement |
-| Proposed Functionality 2 additions | Awaiting module team agreement |
+| Two functionalities as scoped above | Agreed |
+| Proposed Functionality 2 additions | Agreed |
 
 The module team's decision will be recorded on a GitHub issue, and this table will be updated.
 
