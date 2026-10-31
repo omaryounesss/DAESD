@@ -11,4 +11,3 @@ The `.txt` files are piStar models (iStar 2.0). Open them at https://www.cin.ufp
 
 In iStar 2.0, softgoals are called **qualities** (cloud shapes).
 
-AI use, declared: the models were drafted with AI assistance, as agreed with the module leader, and reviewed by Mohamed Alabweh.
