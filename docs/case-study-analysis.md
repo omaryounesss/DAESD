@@ -61,17 +61,27 @@ These dependencies are the starting point for the i\* Strategic Dependency model
 
 The *Type* column gives the i\* dependum type, which decides how each dependency is drawn in the SD model: a **goal** is an outcome that is either achieved or not, a **softgoal** is a quality with no clear-cut criteria, a **task** is a specific activity, and a **resource** is information or a physical item.
 
+Platform and Administrator are the two roles inside the marketplace (see 3.1), so each dependency names the role that actually needs or provides the dependum.
+
 | Depender | Depends on | For | Type |
 |---|---|---|---|
+| Platform | Producer | Product details | Resource |
+| Platform | Producer | Up-to-date stock and season data | Resource |
+| Platform | Organic-certification service | Organic claims verified | Goal |
+| Producer | Platform | Product published | Goal |
+| Producer | Platform | Easy listing process | Softgoal |
+| Administrator | Platform | Flag unverified listings for review | Task |
 | Customer | Producer | Accurate product, allergen and origin information | Softgoal |
-| Customer | Marketplace | Honest (verified) organic claims | Softgoal |
-| Customer | Marketplace | Alerts if a product they bought is unsafe | Resource |
-| Marketplace | Producer | Up-to-date stock and season data | Resource |
-| Marketplace | Producer | Information during quality incidents | Resource |
-| Marketplace | Organic-certification service | Organic claims verified | Goal |
-| Marketplace | Payment provider | Payments collected and payouts made | Goal |
-| Marketplace | Notification service | Reliable delivery of confirmations and alerts | Softgoal |
-| Producer | Marketplace | Correct payment of their share, minus 5% commission | Goal |
+| Customer | Platform | Honest (verified) organic claims | Softgoal |
+| Customer | Platform | Products found by search | Goal |
+| Producer | Platform | Correct payment of their share, minus 5% commission | Goal |
+| Platform | Payment provider | Payments collected and payouts made | Goal |
+| Platform | Notification service | Reliable delivery of confirmations and alerts | Softgoal |
+| Customer | Administrator | Alerts if a product they bought is unsafe | Resource |
+| Administrator | Producer | Information during quality incidents | Resource |
+| Administrator | Customer | Quality issue reports | Resource |
+
+i\* shows who an actor relies on, not who it exchanges messages with. Customers receive product information through the platform, but the producer is its source, so that dependency points to the Producer.
 
 ### 3.4 Tensions between stakeholder goals
 
