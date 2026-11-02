@@ -116,3 +116,12 @@ The same names are used at every level so the link from the strategic model to t
 
 The module team's decision will be recorded on a GitHub issue, and this table will be updated.
 
+## References 
+
+Department for Environment, Food & Rural Affairs (2016) *Organic food: labelling and advertising rules*. Available at:
+https://www.gov.uk/guidance/organic-food-labelling-rules (Accessed: 24 October 2026).
+
+Food Standards Agency (2025) *Allergen guidance for food businesses*. Available at: https://www.food.gov.uk/business-guidance/allergen-guidance-for-food-businesses (Accessed: 25 October 2026).
+
+The Open University (2012) *Introducing ICT systems: 16.6 Pricing and stock control*. OpenLearn. Available at: https://www.open.edu/openlearn/digital-computing/introducing-ict-systems/content-section-16.6 (Accessed: 25 October 2026).
+
