@@ -6,7 +6,7 @@
 | **Use case** | Use Case 1 – Producer Product Listing and Inventory Management |
 | **Backlog item** | E3-06 (lead: Omar Younes, with Mohamed Alabweh and Zaineldin Sharaf) |
 | **Sprint** | 2 |
-| **Status** | Draft. The i\* and strategic BPMN columns are complete. The operational BPMN and Camunda columns are **planned names** to be confirmed by Zaineldin Sharaf (M3) and Omar Abdelaaty (M4) as their models are built. |
+| **Status** | Draft. The i\* column is complete (Mohamed Alabweh). The strategic BPMN column has been checked against `strategic-marketplace.bpmn` (Omar Younes, see section 5). The operational BPMN and Camunda columns are **planned names** to be confirmed by Zaineldin Sharaf (M3) and Omar Abdelaaty (M4) as their models are built. |
 | **Related artefacts** | [case-study-analysis.md](case-study-analysis.md) · [selected-functionalities.md](selected-functionalities.md) · [i\* models](../models/i-star/) · [strategic BPMN](../models/strategic-bpmn/) |
 
 ---
@@ -35,7 +35,7 @@ The brief asks for a clear progression: **i\* SD/SR → strategic BPMN → opera
 | 1.4 | Producer depends on Platform for *Easy listing process* (§3.3); tension: list quickly vs complete data (§3.4) | SD/SR dependency *Easy listing process* (quality) | – (design quality, not a strategic element) | Exception path: user task **Correct product details** with the validation messages | Form shows clear, field-level error messages | BR-01, BR-03 |
 | 1.5 | Platform depends on certification service for *Organic claims verified* (§3.3) | SD/SR dependency *Organic claims verified*; SR goal **Organic claim verified**, task **Check with certification service** | Message flows *Certification check request* / *Certification result* (Organic Certification Service pool) | Gateway *Organic claimed?*; service task **Check with certification service**; gateway *Certification passed?* | Service task calling the simulated certification service (built by Mohamed Hamdy, M5) | BR-02 |
 | 1.6 | Customer depends on Platform for *Honest (verified) organic claims* (§3.3) | SD/SR dependency *Honest (verified) organic claims* → quality **Trustworthy organic labelling** | – | *Certification passed?* = no → product cannot be published as organic | Gateway condition on the certification result variable | BR-02 |
-| 1.7 | Tension: waiting for an unavailable service protects trust but delays sales (§3.4) | SR task **Request manual review** (helps *Trustworthy organic labelling*, hurts *Fast listing*); SD/SR dependency *Flag unverified listings for review* (Administrator) | Administrator lane | Error boundary event on **Check with certification service** → retry → user task **Review unverified listing** (Administrator lane) | Error boundary event, retry, and an Administrator user task with a review Form | BR-03 |
+| 1.7 | Tension: waiting for an unavailable service protects trust but delays sales (§3.4) | SR task **Request manual review** (helps *Trustworthy organic labelling*, hurts *Fast listing*); SD/SR dependency *Flag unverified listings for review* (Administrator) | Inside *Manage product listings* (no separate strategic element; the manual review is operational detail, carried out by a role from the *Marketplace Administrator* lane) | Error boundary event on **Check with certification service** → retry → user task **Review unverified listing** (Administrator lane) | Error boundary event, retry, and an Administrator user task with a review Form | BR-03 |
 | 1.8 | Product stored for customers and traceability | SR task **Save product to catalogue**, resource **Product catalogue** | Data stores *Product catalogue* and *Traceability records* | Service task **Save product to catalogue**; data stores *Product catalogue* and *Traceability records* | Process variables written to the catalogue; origin, allergen and best-before recorded | BR-01, BR-10 |
 
 ## 4. Functionality 2: Inventory and seasonal availability management
@@ -46,18 +46,30 @@ The brief asks for a clear progression: **i\* SD/SR → strategic BPMN → opera
 | 2.2 | Platform depends on Producer for *Up-to-date stock and season data* (§3.3) | SD/SR dependency *Up-to-date stock and season data*; SR goal **Stock kept accurate** (Producer); task **Read stock and season updates** (Platform) | Message flow *Stock and season update*; start event *Stock or season update received* | User task **Update stock and season** (Producer lane) | Camunda Form *Stock and season update* (quantity, season start, season end) | BR-04, BR-05 |
 | 2.3 | Tension: producers also sell offline, so stock drifts (§3.4) | SR task **Make unavailable at zero stock** (helps *Accurate availability*); Producer trade-off *Update after each sale* vs *Update stock weekly* | Inside *Manage inventory and availability* | Gateway *Stock at zero?* → service task **Make unavailable at zero stock** | Gateway condition on the quantity variable | BR-04 |
 | 2.4 | Restocked products only sold in season | SR task **Check season dates** (helps *Accurate availability*) | Inside *Manage inventory and availability* | Gateway *Within season?*; timer events at season start and end (agreed F2 addition) | Gateway condition on season dates; timer events | BR-05 |
+| 2.5 | A paid order reduces stock (analysis §6, link 2) | Pending G1: *Order paid – reduce stock* to be added to the SR model | Data association *Process orders and payments* → *Product catalogue* (added under G2); Task 2 integration point | Message start event **Order paid – reduce stock** (backlog E2-07) | Message start event correlating product ID and quantity sold | BR-04 |
 
 ## 5. Gaps to close
 
-Checking the levels against each other found these gaps. Each has an owner.
+Checking the levels against each other found these gaps. Each has an owner and a status.
 
-| # | Gap | Where | Action | Owner |
-|---|---|---|---|---|
-| G1 | The agreed F2 additions (low-stock alert via the notification service, rejected stock updates, "order paid – reduce stock" message start) are not yet in the i\* SR model. | i\* SR | Add a task *Send low-stock alert* depending on the Notification service, and a task *Reject invalid update* to the Platform. | Mohamed Alabweh |
-| G2 | In the strategic BPMN, *Process orders and payments* only reads the *Product catalogue*; nothing shows a paid order reducing stock. | Strategic BPMN | Make the data association two-way, or note it as the Task 2 integration point. | Omar Younes |
-| G3 | Operational task names are planned, not built. | Operational BPMN | Use the names in sections 3 and 4, or report changes so i\* can match. | Zaineldin Sharaf |
-| G4 | Camunda element names and variables are planned, not built. | Camunda | Use the names in sections 3 and 4 for tasks, Forms and variables. | Omar Abdelaaty |
-| G5 | The certification-service fallback is worded differently in two documents ("retry, then administrator" vs "manual review or listing without the organic claim"). | Analysis / functionalities | Agree one fallback. This table assumes retry, then administrator review. | Omar Younes, Zaineldin Sharaf |
+| # | Gap | Where | Action | Owner | Status |
+|---|---|---|---|---|---|
+| G1 | The agreed F2 additions (low-stock alert via the notification service, rejected stock updates, "order paid – reduce stock" message start) are not yet in the i\* SR model. | i\* SR | Add a task *Send low-stock alert* depending on the Notification service, a task *Reject invalid update* to the Platform, and *Order paid – reduce stock* (row 2.5). | Mohamed Alabweh | Open |
+| G2 | In the strategic BPMN, *Process orders and payments* only read the *Product catalogue*; nothing showed a paid order reducing stock. | Strategic BPMN | Added a write data association from *Process orders and payments* to *Product catalogue*, and recorded it as the Task 2 integration point (row 2.5). | Omar Younes | Done |
+| G3 | Operational task names are planned, not built. | Operational BPMN | Use the names in sections 3 and 4, or report changes so i\* can match. | Zaineldin Sharaf | Open |
+| G4 | Camunda element names and variables are planned, not built. | Camunda | Use the names in sections 3 and 4 for tasks, Forms and variables. | Omar Abdelaaty | Open |
+| G5 | The certification-service fallback was worded differently in two documents ("retry, then administrator" vs "manual review or listing without the organic claim"). | Analysis / functionalities | Agreed fallback: **timed retry; if the service is still unavailable, the listing goes to an administrator (user task *Review unverified listing*)**. The product is never published as organic without verification. Both documents now use this wording. | Omar Younes, Zaineldin Sharaf | Agreed [date] |
+
+### Strategic BPMN check (Omar Younes)
+
+Every strategic BPMN element named in sections 3 and 4 was checked against `strategic-marketplace.bpmn`. Each one exists with exactly the name used here:
+
+- **Sub-processes:** *Manage product listings*, *Manage inventory and availability*, *Process orders and payments*
+- **Events:** *Product details received*, *Stock or season update received*, *Stock status updated*
+- **Message flows:** *Product details*, *Stock and season update*, *Certification check request*, *Certification result*
+- **Data stores:** *Product catalogue*, *Traceability records*
+
+One correction was made. Row 1.7 previously pointed to the Administrator lane, but the strategic model has no review element there, so the row now states that manual review is operational detail inside *Manage product listings*.
 
 ## 6. Keeping this table current
 
