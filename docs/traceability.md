@@ -7,7 +7,7 @@
 | **Backlog item** | E3-06 (lead: Omar Younes, with Mohamed Alabweh and Zaineldin Sharaf) |
 | **Sprint** | 2 |
 | **Status** | Draft. The i\* column is complete (Mohamed Alabweh). The strategic BPMN column has been checked against `strategic-marketplace.bpmn` (Omar Younes, see section 5). The operational BPMN names for Functionality 1 have been confirmed against the completed model (Zaineldin Sharaf, M3); Functionality 2 is pending. The Camunda column contains **planned names** to be confirmed by Omar Abdelaaty (M4) as the executable models are built. |
-| **Related artefacts** | [case-study-analysis.md](case-study-analysis.md) · [selected-functionalities.md](selected-functionalities.md) · [i\* models](../models/i-star/) · [strategic BPMN](../models/strategic-bpmn/) |
+| **Related artefacts** | [case-study-analysis.md](case-study-analysis.md) · [selected-functionalities.md](selected-functionalities.md) · [i\* models](../models/i-star/) · [strategic BPMN](../models/strategic-bpmn/) · [opertional BPMN models](../models/operational-bpmn/)|
 
 ---
 
