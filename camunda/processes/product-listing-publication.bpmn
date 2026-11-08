@@ -4,7 +4,7 @@
     <bpmn:documentation>Executable implementation of models/operational-bpmn/functionality-1/product-listing.bpmn. Service-task job types are integration contracts for the simulated services supplied during Sprint 2/3.</bpmn:documentation>
     <bpmn:startEvent id="Start_ProductListing" name="Producer starts listing"><bpmn:outgoing>Flow_Start_Submit</bpmn:outgoing></bpmn:startEvent>
     <bpmn:userTask id="Task_SubmitDetails" name="Submit product details">
-      <bpmn:extensionElements><zeebe:userTask><zeebe:formDefinition formId="product-listing-form" /></zeebe:userTask></bpmn:extensionElements>
+      <bpmn:extensionElements><zeebe:userTask /><zeebe:formDefinition formId="product-listing-form" /></bpmn:extensionElements>
       <bpmn:incoming>Flow_Start_Submit</bpmn:incoming><bpmn:outgoing>Flow_Submit_Validate</bpmn:outgoing>
     </bpmn:userTask>
     <bpmn:serviceTask id="Task_ValidateDetails" name="Validate product details">
@@ -15,7 +15,7 @@
       <bpmn:incoming>Flow_Validate_Valid</bpmn:incoming><bpmn:outgoing>Flow_DetailsInvalid</bpmn:outgoing><bpmn:outgoing>Flow_DetailsValid</bpmn:outgoing>
     </bpmn:exclusiveGateway>
     <bpmn:userTask id="Task_CorrectDetails" name="Correct product details">
-      <bpmn:extensionElements><zeebe:userTask><zeebe:formDefinition formId="product-listing-form" /></zeebe:userTask></bpmn:extensionElements>
+      <bpmn:extensionElements><zeebe:userTask /><zeebe:formDefinition formId="product-listing-form" /></bpmn:extensionElements>
       <bpmn:incoming>Flow_DetailsInvalid</bpmn:incoming><bpmn:outgoing>Flow_Correct_Validate</bpmn:outgoing>
     </bpmn:userTask>
     <bpmn:serviceTask id="Task_CheckOrganicClaim" name="Check organic claim">
@@ -44,7 +44,7 @@
       <bpmn:incoming>Flow_Timeout_RetryGateway</bpmn:incoming><bpmn:outgoing>Flow_RetryRequest</bpmn:outgoing><bpmn:outgoing>Flow_ManualReview</bpmn:outgoing>
     </bpmn:exclusiveGateway>
     <bpmn:userTask id="Task_ManualReview" name="Manually review certification">
-      <bpmn:extensionElements><zeebe:userTask><zeebe:formDefinition formId="manual-certification-review-form" /></zeebe:userTask></bpmn:extensionElements>
+      <bpmn:extensionElements><zeebe:userTask /><zeebe:formDefinition formId="manual-certification-review-form" /></bpmn:extensionElements>
       <bpmn:incoming>Flow_ManualReview</bpmn:incoming><bpmn:outgoing>Flow_Manual_ApprovedGateway</bpmn:outgoing>
     </bpmn:userTask>
     <bpmn:exclusiveGateway id="Gateway_ManualApproved" name="Organic evidence verified?">
@@ -59,7 +59,7 @@
       <bpmn:incoming>Flow_CertificationRejected</bpmn:incoming><bpmn:outgoing>Flow_Flag_RejectedDecision</bpmn:outgoing>
     </bpmn:serviceTask>
     <bpmn:userTask id="Task_RejectedDecision" name="Decide how to proceed after rejected claim">
-      <bpmn:extensionElements><zeebe:userTask><zeebe:formDefinition formId="rejected-organic-claim-form" /></zeebe:userTask></bpmn:extensionElements>
+      <bpmn:extensionElements><zeebe:userTask /><zeebe:formDefinition formId="rejected-organic-claim-form" /></bpmn:extensionElements>
       <bpmn:incoming>Flow_Flag_RejectedDecision</bpmn:incoming><bpmn:outgoing>Flow_Decision_RemoveGateway</bpmn:outgoing>
     </bpmn:userTask>
     <bpmn:exclusiveGateway id="Gateway_RemoveClaim" name="Remove organic claim?">
