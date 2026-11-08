@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 15,
+  "id": "manual-certification-review-form",
+  "components": [
+    {
+      "label": "Manual certification review",
+      "type": "text",
+      "text": "Review the submitted evidence and record a justified decision."
+    },
+    {
+      "label": "Review notes",
+      "type": "textarea",
+      "key": "manualReviewNotes",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "label": "Organic evidence verified?",
+      "type": "radio",
+      "key": "manualCertificationVerified",
+      "validate": {
+        "required": true
+      },
+      "values": [
+        {
+          "label": "Verified",
+          "value": true
+        },
+        {
+          "label": "Not verified",
+          "value": false
+        }
+      ]
+    },
+    {
+      "label": "Submit decision",
+      "type": "button",
+      "action": "submit"
+    }
+  ]
+}
