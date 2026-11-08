@@ -1,33 +1,42 @@
 {
-  "schemaVersion": 15,
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.6.0",
+  "exporter": {
+    "name": "Camunda Modeler",
+    "version": "5.30.0"
+  },
+  "schemaVersion": 16,
   "id": "rejected-organic-claim-form",
+  "type": "default",
   "components": [
     {
-      "label": "Organic certification was rejected",
+      "id": "Field_033",
       "type": "text",
-      "text": "Choose whether to remove the organic claim and continue, or withhold this listing."
+      "text": "## Organic certification was rejected\nThe certification service could not verify the organic claim for **{{productName}}** (reference {{certificationReference}}). A product cannot be listed as organic without a verified certificate."
     },
     {
-      "label": "Remove organic claim?",
+      "id": "Field_034",
       "type": "radio",
-      "key": "removeOrganicClaim",
+      "key": "rejectedClaimDecision",
+      "label": "How do you want to proceed?",
       "validate": {
         "required": true
       },
       "values": [
         {
-          "label": "Remove claim and continue to publication",
-          "value": true
+          "label": "Remove the organic claim and publish without it",
+          "value": "remove-claim"
         },
         {
           "label": "Withhold this listing",
-          "value": false
+          "value": "withhold"
         }
       ]
     },
     {
-      "label": "Submit decision",
+      "id": "Field_035",
       "type": "button",
+      "label": "Submit decision",
       "action": "submit"
     }
   ]

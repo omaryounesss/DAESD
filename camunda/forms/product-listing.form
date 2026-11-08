@@ -1,127 +1,194 @@
 {
-  "schemaVersion": 15,
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.6.0",
+  "exporter": {
+    "name": "Camunda Modeler",
+    "version": "5.30.0"
+  },
+  "schemaVersion": 16,
   "id": "product-listing-form",
+  "type": "default",
   "components": [
     {
-      "label": "Product name",
+      "id": "Field_001",
+      "type": "text",
+      "text": "## List a new product\nEnter the product, stock, season and traceability details."
+    },
+    {
+      "id": "Field_002",
+      "type": "textfield",
+      "key": "producerName",
+      "label": "Producer name",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "id": "Field_003",
       "type": "textfield",
       "key": "productName",
+      "label": "Product name",
       "validate": {
         "required": true
       }
     },
     {
-      "label": "Description",
+      "id": "Field_004",
       "type": "textarea",
       "key": "productDescription",
+      "label": "Description",
       "validate": {
         "required": true
       }
     },
     {
-      "label": "Category",
+      "id": "Field_005",
       "type": "select",
       "key": "category",
+      "label": "Category",
       "validate": {
         "required": true
       },
       "values": [
         {
-          "label": "Fruit and vegetables",
-          "value": "fruit-vegetables"
+          "label": "Vegetables",
+          "value": "Vegetables"
         },
         {
-          "label": "Meat and dairy",
-          "value": "meat-dairy"
+          "label": "Fruit",
+          "value": "Fruit"
+        },
+        {
+          "label": "Dairy",
+          "value": "Dairy"
+        },
+        {
+          "label": "Eggs",
+          "value": "Eggs"
+        },
+        {
+          "label": "Meat",
+          "value": "Meat"
         },
         {
           "label": "Bakery",
-          "value": "bakery"
+          "value": "Bakery"
+        },
+        {
+          "label": "Preserves",
+          "value": "Preserves"
         },
         {
           "label": "Other",
-          "value": "other"
+          "value": "Other"
         }
       ]
     },
     {
-      "label": "Price (£)",
+      "id": "Field_006",
       "type": "number",
       "key": "price",
+      "label": "Price (GBP)",
       "validate": {
         "required": true,
         "min": 0.01
-      }
+      },
+      "decimalDigits": 2
     },
     {
-      "label": "Quantity",
+      "id": "Field_007",
       "type": "number",
       "key": "quantity",
+      "label": "Quantity in stock",
       "validate": {
         "required": true,
         "min": 0
+      },
+      "decimalDigits": 0
+    },
+    {
+      "id": "Field_008",
+      "type": "datetime",
+      "subtype": "date",
+      "key": "availableFrom",
+      "dateLabel": "Available from (season start)",
+      "validate": {
+        "required": true
       }
     },
     {
-      "label": "Origin",
+      "id": "Field_009",
+      "type": "datetime",
+      "subtype": "date",
+      "key": "availableUntil",
+      "dateLabel": "Available until (season end)",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "id": "Field_010",
       "type": "textfield",
       "key": "origin",
-      "validate": {
-        "required": true
-      }
-    },
-    {
-      "label": "Harvest date",
-      "type": "date",
-      "key": "harvestDate",
-      "validate": {
-        "required": true
-      }
-    },
-    {
-      "label": "Best-before date",
-      "type": "date",
-      "key": "bestBeforeDate",
-      "validate": {
-        "required": true
-      }
-    },
-    {
-      "label": "Allergens",
-      "type": "textarea",
-      "key": "allergens",
-      "description": "Enter 'None' where applicable.",
-      "validate": {
-        "required": true
-      }
-    },
-    {
-      "label": "Organic claim",
-      "type": "radio",
-      "key": "organicClaimMade",
+      "label": "Farm origin",
       "validate": {
         "required": true
       },
-      "values": [
-        {
-          "label": "Yes",
-          "value": true
-        },
-        {
-          "label": "No",
-          "value": false
-        }
-      ]
+      "description": "Farm name and location"
     },
     {
-      "label": "Certification reference / evidence",
+      "id": "Field_011",
+      "type": "datetime",
+      "subtype": "date",
+      "key": "harvestDate",
+      "dateLabel": "Harvest date",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "id": "Field_012",
+      "type": "datetime",
+      "subtype": "date",
+      "key": "bestBeforeDate",
+      "dateLabel": "Best-before date",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "id": "Field_013",
+      "type": "textarea",
+      "key": "allergens",
+      "label": "Allergen information",
+      "validate": {
+        "required": true
+      },
+      "description": "List the 14 regulated allergens present, or write \"None\"."
+    },
+    {
+      "id": "Field_014",
+      "type": "checkbox",
+      "key": "organicClaimMade",
+      "label": "This product is certified organic"
+    },
+    {
+      "id": "Field_015",
       "type": "textfield",
       "key": "certificationReference",
-      "description": "Required when making an organic claim."
+      "label": "Organic certification reference",
+      "validate": {
+        "required": false
+      },
+      "description": "UK control body code, e.g. GB-ORG-05",
+      "conditional": {
+        "hide": "=organicClaimMade != true"
+      }
     },
     {
-      "label": "Submit listing",
+      "id": "Field_016",
       "type": "button",
+      "label": "Submit listing",
       "action": "submit"
     }
   ]
