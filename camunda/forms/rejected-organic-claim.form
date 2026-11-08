@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 15,
+  "id": "rejected-organic-claim-form",
+  "components": [
+    {
+      "label": "Organic certification was rejected",
+      "type": "text",
+      "text": "Choose whether to remove the organic claim and continue, or withhold this listing."
+    },
+    {
+      "label": "Remove organic claim?",
+      "type": "radio",
+      "key": "removeOrganicClaim",
+      "validate": {
+        "required": true
+      },
+      "values": [
+        {
+          "label": "Remove claim and continue to publication",
+          "value": true
+        },
+        {
+          "label": "Withhold this listing",
+          "value": false
+        }
+      ]
+    },
+    {
+      "label": "Submit decision",
+      "type": "button",
+      "action": "submit"
+    }
+  ]
+}
