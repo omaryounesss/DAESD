@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 15,
+  "id": "product-correction-form",
+  "components": [
+    {
+      "label": "Correction required",
+      "type": "text",
+      "text": "Your listing needs correction. Review the validation feedback and amend the fields below before resubmitting."
+    },
+    {
+      "label": "Product name",
+      "type": "textfield",
+      "key": "productName",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "label": "Description",
+      "type": "textarea",
+      "key": "productDescription",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "label": "Category",
+      "type": "select",
+      "key": "category",
+      "validate": {
+        "required": true
+      },
+      "values": [
+        {
+          "label": "Fruit and vegetables",
+          "value": "fruit-vegetables"
+        },
+        {
+          "label": "Meat and dairy",
+          "value": "meat-dairy"
+        },
+        {
+          "label": "Bakery",
+          "value": "bakery"
+        },
+        {
+          "label": "Other",
+          "value": "other"
+        }
+      ]
+    },
+    {
+      "label": "Price (£)",
+      "type": "number",
+      "key": "price",
+      "validate": {
+        "required": true,
+        "min": 0.01
+      }
+    },
+    {
+      "label": "Quantity",
+      "type": "number",
+      "key": "quantity",
+      "validate": {
+        "required": true,
+        "min": 0
+      }
+    },
+    {
+      "label": "Origin",
+      "type": "textfield",
+      "key": "origin",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "label": "Harvest date",
+      "type": "date",
+      "key": "harvestDate",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "label": "Best-before date",
+      "type": "date",
+      "key": "bestBeforeDate",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "label": "Allergens",
+      "type": "textarea",
+      "key": "allergens",
+      "description": "Enter 'None' where applicable.",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "label": "Organic claim",
+      "type": "radio",
+      "key": "organicClaimMade",
+      "validate": {
+        "required": true
+      },
+      "values": [
+        {
+          "label": "Yes",
+          "value": true
+        },
+        {
+          "label": "No",
+          "value": false
+        }
+      ]
+    },
+    {
+      "label": "Certification reference / evidence",
+      "type": "textfield",
+      "key": "certificationReference",
+      "description": "Required when making an organic claim."
+    },
+    {
+      "label": "Resubmit corrected listing",
+      "type": "button",
+      "action": "submit"
+    }
+  ]
+}
