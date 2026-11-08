@@ -15,7 +15,7 @@
       <bpmn:incoming>Flow_Validate_Valid</bpmn:incoming><bpmn:outgoing>Flow_DetailsInvalid</bpmn:outgoing><bpmn:outgoing>Flow_DetailsValid</bpmn:outgoing>
     </bpmn:exclusiveGateway>
     <bpmn:userTask id="Task_CorrectDetails" name="Correct product details">
-      <bpmn:extensionElements><zeebe:userTask /><zeebe:formDefinition formId="product-listing-form" /></bpmn:extensionElements>
+      <bpmn:extensionElements><zeebe:userTask /><zeebe:formDefinition formId="product-correction-form" /></bpmn:extensionElements>
       <bpmn:incoming>Flow_DetailsInvalid</bpmn:incoming><bpmn:outgoing>Flow_Correct_Validate</bpmn:outgoing>
     </bpmn:userTask>
     <bpmn:serviceTask id="Task_CheckOrganicClaim" name="Check organic claim">
