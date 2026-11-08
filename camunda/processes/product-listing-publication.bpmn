@@ -1,135 +1,247 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" id="Definitions_ProductListing" targetNamespace="https://daesd.uwe.ac.uk/camunda">
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_ProductListing" targetNamespace="https://daesd.uwe.ac.uk/camunda" exporter="Camunda Modeler" exporterVersion="5.30.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.6.0">
   <bpmn:process id="product-listing-publication" name="Product listing, validation and publication" isExecutable="true">
-    <bpmn:documentation>Executable implementation of models/operational-bpmn/functionality-1/product-listing.bpmn. Service-task job types are integration contracts for the simulated services supplied during Sprint 2/3.</bpmn:documentation>
+    <bpmn:documentation>Executable Camunda 8 implementation of Functionality 1. Source model: models/operational-bpmn/functionality-1/product-listing.bpmn (Zain-Eldin Sharaf, M3). Element names match the operational model; see docs/camunda-variables.md for the mapping.</bpmn:documentation>
     <bpmn:startEvent id="Start_ProductListing" name="Producer starts listing"><bpmn:outgoing>Flow_Start_Submit</bpmn:outgoing></bpmn:startEvent>
-    <bpmn:userTask id="Task_SubmitDetails" name="Submit product details">
-      <bpmn:extensionElements><zeebe:userTask /><zeebe:formDefinition formId="product-listing-form" /></bpmn:extensionElements>
-      <bpmn:incoming>Flow_Start_Submit</bpmn:incoming><bpmn:outgoing>Flow_Submit_Validate</bpmn:outgoing>
-    </bpmn:userTask>
-    <bpmn:serviceTask id="Task_ValidateDetails" name="Validate product details">
-      <bpmn:extensionElements><zeebe:taskDefinition type="validate-product-listing" /></bpmn:extensionElements>
-      <bpmn:incoming>Flow_Submit_Validate</bpmn:incoming><bpmn:incoming>Flow_Correct_Validate</bpmn:incoming><bpmn:outgoing>Flow_Validate_Valid</bpmn:outgoing>
-    </bpmn:serviceTask>
-    <bpmn:exclusiveGateway id="Gateway_DetailsValid" name="Product details valid?">
-      <bpmn:incoming>Flow_Validate_Valid</bpmn:incoming><bpmn:outgoing>Flow_DetailsInvalid</bpmn:outgoing><bpmn:outgoing>Flow_DetailsValid</bpmn:outgoing>
-    </bpmn:exclusiveGateway>
-    <bpmn:userTask id="Task_CorrectDetails" name="Correct product details">
-      <bpmn:extensionElements><zeebe:userTask /><zeebe:formDefinition formId="product-correction-form" /></bpmn:extensionElements>
-      <bpmn:incoming>Flow_DetailsInvalid</bpmn:incoming><bpmn:outgoing>Flow_Correct_Validate</bpmn:outgoing>
-    </bpmn:userTask>
-    <bpmn:serviceTask id="Task_CheckOrganicClaim" name="Check organic claim">
-      <bpmn:extensionElements><zeebe:taskDefinition type="check-organic-claim" /></bpmn:extensionElements>
-      <bpmn:incoming>Flow_DetailsValid</bpmn:incoming><bpmn:outgoing>Flow_CheckClaim_Gateway</bpmn:outgoing>
-    </bpmn:serviceTask>
-    <bpmn:exclusiveGateway id="Gateway_OrganicClaim" name="Organic claim made?">
-      <bpmn:incoming>Flow_CheckClaim_Gateway</bpmn:incoming><bpmn:outgoing>Flow_OrganicYes</bpmn:outgoing><bpmn:outgoing>Flow_OrganicNo</bpmn:outgoing>
-    </bpmn:exclusiveGateway>
-    <bpmn:serviceTask id="Task_RequestCertification" name="Request certification verification">
-      <bpmn:extensionElements><zeebe:taskDefinition type="request-certification-verification" /></bpmn:extensionElements>
-      <bpmn:incoming>Flow_OrganicYes</bpmn:incoming><bpmn:incoming>Flow_RetryRequest</bpmn:incoming><bpmn:outgoing>Flow_Request_Result</bpmn:outgoing>
-    </bpmn:serviceTask>
-    <bpmn:exclusiveGateway id="Gateway_CertificationResult" name="Certification result received?">
-      <bpmn:incoming>Flow_Request_Result</bpmn:incoming><bpmn:outgoing>Flow_CertificationVerified</bpmn:outgoing><bpmn:outgoing>Flow_CertificationRejected</bpmn:outgoing><bpmn:outgoing>Flow_CertificationUnavailable</bpmn:outgoing>
-    </bpmn:exclusiveGateway>
-    <bpmn:serviceTask id="Task_RecordVerified" name="Record verified organic status">
-      <bpmn:extensionElements><zeebe:taskDefinition type="record-verified-organic-status" /></bpmn:extensionElements>
-      <bpmn:incoming>Flow_CertificationVerified</bpmn:incoming><bpmn:outgoing>Flow_Verified_Approved</bpmn:outgoing>
-    </bpmn:serviceTask>
-    <bpmn:serviceTask id="Task_RecordTimeout" name="Record certification timeout">
-      <bpmn:extensionElements><zeebe:taskDefinition type="record-certification-timeout" /></bpmn:extensionElements>
-      <bpmn:incoming>Flow_CertificationUnavailable</bpmn:incoming><bpmn:outgoing>Flow_Timeout_RetryGateway</bpmn:outgoing>
-    </bpmn:serviceTask>
-    <bpmn:exclusiveGateway id="Gateway_Retries" name="Retry attempts remaining?">
-      <bpmn:incoming>Flow_Timeout_RetryGateway</bpmn:incoming><bpmn:outgoing>Flow_RetryRequest</bpmn:outgoing><bpmn:outgoing>Flow_ManualReview</bpmn:outgoing>
-    </bpmn:exclusiveGateway>
-    <bpmn:userTask id="Task_ManualReview" name="Manually review certification">
-      <bpmn:extensionElements><zeebe:userTask /><zeebe:formDefinition formId="manual-certification-review-form" /></bpmn:extensionElements>
-      <bpmn:incoming>Flow_ManualReview</bpmn:incoming><bpmn:outgoing>Flow_Manual_ApprovedGateway</bpmn:outgoing>
-    </bpmn:userTask>
-    <bpmn:exclusiveGateway id="Gateway_ManualApproved" name="Organic evidence verified?">
-      <bpmn:incoming>Flow_Manual_ApprovedGateway</bpmn:incoming><bpmn:outgoing>Flow_ManualVerified</bpmn:outgoing><bpmn:outgoing>Flow_ManualRejected</bpmn:outgoing>
-    </bpmn:exclusiveGateway>
-    <bpmn:serviceTask id="Task_RecordManualVerified" name="Record manually verified certification">
-      <bpmn:extensionElements><zeebe:taskDefinition type="record-manual-certification" /></bpmn:extensionElements>
-      <bpmn:incoming>Flow_ManualVerified</bpmn:incoming><bpmn:outgoing>Flow_ManualVerified_Approved</bpmn:outgoing>
-    </bpmn:serviceTask>
-    <bpmn:serviceTask id="Task_FlagRejected" name="Flag rejected organic claim">
-      <bpmn:extensionElements><zeebe:taskDefinition type="flag-rejected-organic-claim" /></bpmn:extensionElements>
-      <bpmn:incoming>Flow_CertificationRejected</bpmn:incoming><bpmn:outgoing>Flow_Flag_RejectedDecision</bpmn:outgoing>
-    </bpmn:serviceTask>
-    <bpmn:userTask id="Task_RejectedDecision" name="Decide how to proceed after rejected claim">
-      <bpmn:extensionElements><zeebe:userTask /><zeebe:formDefinition formId="rejected-organic-claim-form" /></bpmn:extensionElements>
-      <bpmn:incoming>Flow_Flag_RejectedDecision</bpmn:incoming><bpmn:outgoing>Flow_Decision_RemoveGateway</bpmn:outgoing>
-    </bpmn:userTask>
-    <bpmn:exclusiveGateway id="Gateway_RemoveClaim" name="Remove organic claim?">
-      <bpmn:incoming>Flow_Decision_RemoveGateway</bpmn:incoming><bpmn:outgoing>Flow_RemoveClaim</bpmn:outgoing><bpmn:outgoing>Flow_WithholdRejected</bpmn:outgoing>
-    </bpmn:exclusiveGateway>
-    <bpmn:serviceTask id="Task_RemoveClaim" name="Remove organic claim from listing">
-      <bpmn:extensionElements><zeebe:taskDefinition type="remove-organic-claim" /></bpmn:extensionElements>
-      <bpmn:incoming>Flow_RemoveClaim</bpmn:incoming><bpmn:outgoing>Flow_Remove_Approved</bpmn:outgoing>
-    </bpmn:serviceTask>
-    <bpmn:serviceTask id="Task_WithholdListing" name="Withhold listing">
-      <bpmn:extensionElements><zeebe:taskDefinition type="withhold-listing" /></bpmn:extensionElements>
-      <bpmn:incoming>Flow_WithholdRejected</bpmn:incoming><bpmn:incoming>Flow_ManualRejected</bpmn:incoming><bpmn:outgoing>Flow_Withheld_Notify</bpmn:outgoing>
-    </bpmn:serviceTask>
-    <bpmn:serviceTask id="Task_NotifyWithheld" name="Notify producer that listing was withheld">
-      <bpmn:extensionElements><zeebe:taskDefinition type="notify-producer" /></bpmn:extensionElements>
-      <bpmn:incoming>Flow_Withheld_Notify</bpmn:incoming><bpmn:outgoing>Flow_NotifyWithheld_End</bpmn:outgoing>
-    </bpmn:serviceTask>
-    <bpmn:endEvent id="End_Withheld" name="Listing withheld"><bpmn:incoming>Flow_NotifyWithheld_End</bpmn:incoming></bpmn:endEvent>
-    <bpmn:exclusiveGateway id="Gateway_Approved" name="Listing approved for publication">
-      <bpmn:incoming>Flow_OrganicNo</bpmn:incoming><bpmn:incoming>Flow_Verified_Approved</bpmn:incoming><bpmn:incoming>Flow_ManualVerified_Approved</bpmn:incoming><bpmn:incoming>Flow_Remove_Approved</bpmn:incoming><bpmn:outgoing>Flow_Approved_Prepare</bpmn:outgoing>
-    </bpmn:exclusiveGateway>
-    <bpmn:serviceTask id="Task_PreparePublication" name="Prepare validated product for publication">
-      <bpmn:extensionElements><zeebe:taskDefinition type="prepare-product-publication" /></bpmn:extensionElements>
-      <bpmn:incoming>Flow_Approved_Prepare</bpmn:incoming><bpmn:outgoing>Flow_Prepare_Save</bpmn:outgoing>
-    </bpmn:serviceTask>
-    <bpmn:serviceTask id="Task_SaveCatalogue" name="Save product to catalogue">
-      <bpmn:extensionElements><zeebe:taskDefinition type="save-product-catalogue" /></bpmn:extensionElements>
-      <bpmn:incoming>Flow_Prepare_Save</bpmn:incoming><bpmn:outgoing>Flow_Save_Publish</bpmn:outgoing>
-    </bpmn:serviceTask>
-    <bpmn:serviceTask id="Task_PublishListing" name="Publish product listing">
-      <bpmn:extensionElements><zeebe:taskDefinition type="publish-product-listing" /></bpmn:extensionElements>
-      <bpmn:incoming>Flow_Save_Publish</bpmn:incoming><bpmn:outgoing>Flow_Publish_Notify</bpmn:outgoing>
-    </bpmn:serviceTask>
-    <bpmn:serviceTask id="Task_NotifyPublished" name="Notify producer of successful publication">
-      <bpmn:extensionElements><zeebe:taskDefinition type="notify-producer" /></bpmn:extensionElements>
-      <bpmn:incoming>Flow_Publish_Notify</bpmn:incoming><bpmn:outgoing>Flow_NotifyPublished_End</bpmn:outgoing>
-    </bpmn:serviceTask>
-    <bpmn:endEvent id="End_Published" name="Product listing published successfully"><bpmn:incoming>Flow_NotifyPublished_End</bpmn:incoming></bpmn:endEvent>
-    <bpmn:sequenceFlow id="Flow_Start_Submit" sourceRef="Start_ProductListing" targetRef="Task_SubmitDetails"/>
-    <bpmn:sequenceFlow id="Flow_Submit_Validate" sourceRef="Task_SubmitDetails" targetRef="Task_ValidateDetails"/>
-    <bpmn:sequenceFlow id="Flow_Correct_Validate" sourceRef="Task_CorrectDetails" targetRef="Task_ValidateDetails"/>
-    <bpmn:sequenceFlow id="Flow_Validate_Valid" sourceRef="Task_ValidateDetails" targetRef="Gateway_DetailsValid"/>
-    <bpmn:sequenceFlow id="Flow_DetailsInvalid" name="No" sourceRef="Gateway_DetailsValid" targetRef="Task_CorrectDetails"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">=productDetailsValid = false</bpmn:conditionExpression></bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_DetailsValid" name="Yes" sourceRef="Gateway_DetailsValid" targetRef="Task_CheckOrganicClaim"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">=productDetailsValid = true</bpmn:conditionExpression></bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_CheckClaim_Gateway" sourceRef="Task_CheckOrganicClaim" targetRef="Gateway_OrganicClaim"/>
-    <bpmn:sequenceFlow id="Flow_OrganicYes" name="Yes" sourceRef="Gateway_OrganicClaim" targetRef="Task_RequestCertification"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">=organicClaimMade = true</bpmn:conditionExpression></bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_OrganicNo" name="No" sourceRef="Gateway_OrganicClaim" targetRef="Gateway_Approved"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">=organicClaimMade = false</bpmn:conditionExpression></bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_Request_Result" sourceRef="Task_RequestCertification" targetRef="Gateway_CertificationResult"/>
-    <bpmn:sequenceFlow id="Flow_CertificationVerified" name="Verified" sourceRef="Gateway_CertificationResult" targetRef="Task_RecordVerified"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">=certificationStatus = "verified"</bpmn:conditionExpression></bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_CertificationRejected" name="Rejected" sourceRef="Gateway_CertificationResult" targetRef="Task_FlagRejected"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">=certificationStatus = "rejected"</bpmn:conditionExpression></bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_CertificationUnavailable" name="Unavailable" sourceRef="Gateway_CertificationResult" targetRef="Task_RecordTimeout"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">=certificationStatus = "unavailable"</bpmn:conditionExpression></bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_Verified_Approved" sourceRef="Task_RecordVerified" targetRef="Gateway_Approved"/>
-    <bpmn:sequenceFlow id="Flow_Timeout_RetryGateway" sourceRef="Task_RecordTimeout" targetRef="Gateway_Retries"/>
-    <bpmn:sequenceFlow id="Flow_RetryRequest" name="Yes" sourceRef="Gateway_Retries" targetRef="Task_RequestCertification"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">=certificationAttempts &lt; 3</bpmn:conditionExpression></bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_ManualReview" name="No" sourceRef="Gateway_Retries" targetRef="Task_ManualReview"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">=certificationAttempts &gt;= 3</bpmn:conditionExpression></bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_Manual_ApprovedGateway" sourceRef="Task_ManualReview" targetRef="Gateway_ManualApproved"/>
-    <bpmn:sequenceFlow id="Flow_ManualVerified" name="Yes" sourceRef="Gateway_ManualApproved" targetRef="Task_RecordManualVerified"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">=manualCertificationVerified = true</bpmn:conditionExpression></bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_ManualRejected" name="No" sourceRef="Gateway_ManualApproved" targetRef="Task_WithholdListing"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">=manualCertificationVerified = false</bpmn:conditionExpression></bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_ManualVerified_Approved" sourceRef="Task_RecordManualVerified" targetRef="Gateway_Approved"/>
-    <bpmn:sequenceFlow id="Flow_Flag_RejectedDecision" sourceRef="Task_FlagRejected" targetRef="Task_RejectedDecision"/>
-    <bpmn:sequenceFlow id="Flow_Decision_RemoveGateway" sourceRef="Task_RejectedDecision" targetRef="Gateway_RemoveClaim"/>
-    <bpmn:sequenceFlow id="Flow_RemoveClaim" name="Yes" sourceRef="Gateway_RemoveClaim" targetRef="Task_RemoveClaim"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">=removeOrganicClaim = true</bpmn:conditionExpression></bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_WithholdRejected" name="No" sourceRef="Gateway_RemoveClaim" targetRef="Task_WithholdListing"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">=removeOrganicClaim = false</bpmn:conditionExpression></bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_Remove_Approved" sourceRef="Task_RemoveClaim" targetRef="Gateway_Approved"/>
-    <bpmn:sequenceFlow id="Flow_Withheld_Notify" sourceRef="Task_WithholdListing" targetRef="Task_NotifyWithheld"/>
-    <bpmn:sequenceFlow id="Flow_NotifyWithheld_End" sourceRef="Task_NotifyWithheld" targetRef="End_Withheld"/>
-    <bpmn:sequenceFlow id="Flow_Approved_Prepare" sourceRef="Gateway_Approved" targetRef="Task_PreparePublication"/>
-    <bpmn:sequenceFlow id="Flow_Prepare_Save" sourceRef="Task_PreparePublication" targetRef="Task_SaveCatalogue"/>
-    <bpmn:sequenceFlow id="Flow_Save_Publish" sourceRef="Task_SaveCatalogue" targetRef="Task_PublishListing"/>
-    <bpmn:sequenceFlow id="Flow_Publish_Notify" sourceRef="Task_PublishListing" targetRef="Task_NotifyPublished"/>
-    <bpmn:sequenceFlow id="Flow_NotifyPublished_End" sourceRef="Task_NotifyPublished" targetRef="End_Published"/>
+    <bpmn:userTask id="Task_SubmitDetails" name="Submit product details"><bpmn:extensionElements><zeebe:userTask /><zeebe:formDefinition formId="product-listing-form" /></bpmn:extensionElements><bpmn:incoming>Flow_Start_Submit</bpmn:incoming><bpmn:outgoing>Flow_Submit_Merge</bpmn:outgoing></bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gateway_MergeValidation"><bpmn:incoming>Flow_Submit_Merge</bpmn:incoming><bpmn:incoming>Flow_Correct_Merge</bpmn:incoming><bpmn:outgoing>Flow_Merge_Validate</bpmn:outgoing></bpmn:exclusiveGateway>
+    <bpmn:subProcess id="SubProcess_ValidateDetails" name="Validate product details"><bpmn:extensionElements><zeebe:ioMapping><zeebe:input source="=[]" target="validationErrors" /><zeebe:output source="=validationErrors" target="validationErrors" /><zeebe:output source="=count(validationErrors) = 0" target="productDetailsValid" /><zeebe:output source="=if listingId = null then &quot;LST-&quot; + substring(replace(string(now()), &quot;[^0-9]&quot;, &quot;&quot;), 1, 17) else listingId" target="listingId" /></zeebe:ioMapping></bpmn:extensionElements><bpmn:incoming>Flow_Merge_Validate</bpmn:incoming><bpmn:outgoing>Flow_Validate_Gateway</bpmn:outgoing>
+      <bpmn:startEvent id="Start_Validation" name="Start validation"><bpmn:outgoing>Flow_V1</bpmn:outgoing></bpmn:startEvent>
+      <bpmn:scriptTask id="Task_ValidateMandatory" name="Validate mandatory product fields"><bpmn:extensionElements><zeebe:script expression="=concatenate(validationErrors, if producerName = null or producerName = &quot;&quot; then [&quot;Producer name is required.&quot;] else [], if productName = null or productName = &quot;&quot; then [&quot;Product name is required.&quot;] else [], if productDescription = null or productDescription = &quot;&quot; then [&quot;Description is required.&quot;] else [], if category = null or category = &quot;&quot; then [&quot;Category is required.&quot;] else [], if origin = null or origin = &quot;&quot; then [&quot;Farm origin is required.&quot;] else [], if allergens = null or allergens = &quot;&quot; then [&quot;Allergen information is required.&quot;] else [], if harvestDate = null or harvestDate = &quot;&quot; then [&quot;Harvest date is required.&quot;] else [], if bestBeforeDate = null or bestBeforeDate = &quot;&quot; then [&quot;Best-before date is required.&quot;] else [], if availableFrom = null or availableFrom = &quot;&quot; then [&quot;Availability start date is required.&quot;] else [], if availableUntil = null or availableUntil = &quot;&quot; then [&quot;Availability end date is required.&quot;] else [], if price = null then [&quot;Price is required.&quot;] else [], if quantity = null then [&quot;Quantity is required.&quot;] else [])" resultVariable="validationErrors" /></bpmn:extensionElements><bpmn:incoming>Flow_V1</bpmn:incoming><bpmn:outgoing>Flow_V2</bpmn:outgoing></bpmn:scriptTask>
+      <bpmn:scriptTask id="Task_ValidatePriceStock" name="Validate price and stock quantity"><bpmn:extensionElements><zeebe:script expression="=concatenate(validationErrors, if price != null and price &lt;= 0 then [&quot;Price must be greater than zero.&quot;] else [], if quantity != null and quantity &lt; 0 then [&quot;Quantity cannot be negative.&quot;] else [], if quantity != null and floor(quantity) != quantity then [&quot;Quantity must be a whole number.&quot;] else [])" resultVariable="validationErrors" /></bpmn:extensionElements><bpmn:incoming>Flow_V2</bpmn:incoming><bpmn:outgoing>Flow_V3</bpmn:outgoing></bpmn:scriptTask>
+      <bpmn:scriptTask id="Task_ValidateSeason" name="Validate seasonal availability dates"><bpmn:extensionElements><zeebe:script expression="=concatenate(validationErrors, if availableFrom != null and availableFrom != &quot;&quot; and availableUntil != null and availableUntil != &quot;&quot; and date(availableUntil) &lt; date(availableFrom) then [&quot;Availability end date must be on or after the start date.&quot;] else [])" resultVariable="validationErrors" /></bpmn:extensionElements><bpmn:incoming>Flow_V3</bpmn:incoming><bpmn:outgoing>Flow_V4</bpmn:outgoing></bpmn:scriptTask>
+      <bpmn:scriptTask id="Task_ValidateOrigin" name="Validate origin and harvest information"><bpmn:extensionElements><zeebe:script expression="=concatenate(validationErrors, if harvestDate != null and harvestDate != &quot;&quot; and date(harvestDate) &gt; today() then [&quot;Harvest date cannot be in the future.&quot;] else [])" resultVariable="validationErrors" /></bpmn:extensionElements><bpmn:incoming>Flow_V4</bpmn:incoming><bpmn:outgoing>Flow_V5</bpmn:outgoing></bpmn:scriptTask>
+      <bpmn:scriptTask id="Task_ValidateAllergenDates" name="Validate allergen and date information"><bpmn:extensionElements><zeebe:script expression="=concatenate(validationErrors, if bestBeforeDate != null and bestBeforeDate != &quot;&quot; and harvestDate != null and harvestDate != &quot;&quot; and date(bestBeforeDate) &lt;= date(harvestDate) then [&quot;Best-before date must be after the harvest date.&quot;] else [], if bestBeforeDate != null and bestBeforeDate != &quot;&quot; and date(bestBeforeDate) &lt; today() then [&quot;Best-before date has already passed.&quot;] else [])" resultVariable="validationErrors" /></bpmn:extensionElements><bpmn:incoming>Flow_V5</bpmn:incoming><bpmn:outgoing>Flow_V6</bpmn:outgoing></bpmn:scriptTask>
+      <bpmn:scriptTask id="Task_CheckCertificationDetails" name="Check organic certification details"><bpmn:extensionElements><zeebe:script expression="=concatenate(validationErrors, if organicClaimMade = true and (certificationReference = null or certificationReference = &quot;&quot;) then [&quot;A certification reference is required for an organic claim.&quot;] else if organicClaimMade = true and not(matches(certificationReference, &quot;^GB-ORG-[0-9]{2}$&quot;)) then [&quot;Certification reference must be a UK organic control body code, e.g. GB-ORG-05.&quot;] else [])" resultVariable="validationErrors" /></bpmn:extensionElements><bpmn:incoming>Flow_V6</bpmn:incoming><bpmn:outgoing>Flow_V7</bpmn:outgoing></bpmn:scriptTask>
+      <bpmn:endEvent id="End_Validation" name="Validation completed"><bpmn:incoming>Flow_V7</bpmn:incoming></bpmn:endEvent>
+      <bpmn:sequenceFlow id="Flow_V1" sourceRef="Start_Validation" targetRef="Task_ValidateMandatory" />
+      <bpmn:sequenceFlow id="Flow_V2" sourceRef="Task_ValidateMandatory" targetRef="Task_ValidatePriceStock" />
+      <bpmn:sequenceFlow id="Flow_V3" sourceRef="Task_ValidatePriceStock" targetRef="Task_ValidateSeason" />
+      <bpmn:sequenceFlow id="Flow_V4" sourceRef="Task_ValidateSeason" targetRef="Task_ValidateOrigin" />
+      <bpmn:sequenceFlow id="Flow_V5" sourceRef="Task_ValidateOrigin" targetRef="Task_ValidateAllergenDates" />
+      <bpmn:sequenceFlow id="Flow_V6" sourceRef="Task_ValidateAllergenDates" targetRef="Task_CheckCertificationDetails" />
+      <bpmn:sequenceFlow id="Flow_V7" sourceRef="Task_CheckCertificationDetails" targetRef="End_Validation" />
+    </bpmn:subProcess>
+    <bpmn:exclusiveGateway id="Gateway_DetailsValid" name="Product details valid?" default="Flow_DetailsInvalid"><bpmn:incoming>Flow_Validate_Gateway</bpmn:incoming><bpmn:outgoing>Flow_DetailsValid</bpmn:outgoing><bpmn:outgoing>Flow_DetailsInvalid</bpmn:outgoing></bpmn:exclusiveGateway>
+    <bpmn:scriptTask id="Task_RequestCorrections" name="Request product corrections"><bpmn:extensionElements><zeebe:script expression="=concatenate(if producerNotifications = null then [] else producerNotifications, [{type: &quot;correction-requested&quot;, listingId: listingId, message: &quot;Your listing needs correction: &quot; + string join(validationErrors, &quot; &quot;), sentAt: string(now())}])" resultVariable="producerNotifications" /></bpmn:extensionElements><bpmn:incoming>Flow_DetailsInvalid</bpmn:incoming><bpmn:outgoing>Flow_Request_Correct</bpmn:outgoing></bpmn:scriptTask>
+    <bpmn:userTask id="Task_CorrectDetails" name="Submit corrected product details"><bpmn:extensionElements><zeebe:userTask /><zeebe:formDefinition formId="product-correction-form" /></bpmn:extensionElements><bpmn:incoming>Flow_Request_Correct</bpmn:incoming><bpmn:outgoing>Flow_Correct_Merge</bpmn:outgoing></bpmn:userTask>
+    <bpmn:scriptTask id="Task_CheckOrganicClaim" name="Check organic claim"><bpmn:extensionElements><zeebe:script expression="=organicClaimMade = true" resultVariable="organicClaimMade" /></bpmn:extensionElements><bpmn:incoming>Flow_DetailsValid</bpmn:incoming><bpmn:outgoing>Flow_Check_Gateway</bpmn:outgoing></bpmn:scriptTask>
+    <bpmn:exclusiveGateway id="Gateway_OrganicClaim" name="Organic claim made?" default="Flow_OrganicNo"><bpmn:incoming>Flow_Check_Gateway</bpmn:incoming><bpmn:outgoing>Flow_OrganicYes</bpmn:outgoing><bpmn:outgoing>Flow_OrganicNo</bpmn:outgoing></bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="Gateway_MergeRequest"><bpmn:incoming>Flow_OrganicYes</bpmn:incoming><bpmn:incoming>Flow_RetryYes</bpmn:incoming><bpmn:outgoing>Flow_Merge_Request</bpmn:outgoing></bpmn:exclusiveGateway>
+    <bpmn:sendTask id="Task_RequestCertification" name="Request certification verification"><bpmn:extensionElements><zeebe:taskDefinition type="request-certification-verification" retries="3" /></bpmn:extensionElements><bpmn:incoming>Flow_Merge_Request</bpmn:incoming><bpmn:outgoing>Flow_Request_Await</bpmn:outgoing></bpmn:sendTask>
+    <bpmn:eventBasedGateway id="Gateway_AwaitCertification"><bpmn:incoming>Flow_Request_Await</bpmn:incoming><bpmn:outgoing>Flow_Await_Result</bpmn:outgoing><bpmn:outgoing>Flow_Await_Timeout</bpmn:outgoing></bpmn:eventBasedGateway>
+    <bpmn:intermediateCatchEvent id="Event_CertificationResult" name="Certification result received"><bpmn:incoming>Flow_Await_Result</bpmn:incoming><bpmn:outgoing>Flow_Result_Verified</bpmn:outgoing><bpmn:messageEventDefinition id="MessageEventDefinition_CertificationResult" messageRef="Message_CertificationResult" /></bpmn:intermediateCatchEvent>
+    <bpmn:exclusiveGateway id="Gateway_CertificationVerified" name="Certification verified?" default="Flow_CertificationRejected"><bpmn:incoming>Flow_Result_Verified</bpmn:incoming><bpmn:outgoing>Flow_CertificationVerified</bpmn:outgoing><bpmn:outgoing>Flow_CertificationRejected</bpmn:outgoing></bpmn:exclusiveGateway>
+    <bpmn:scriptTask id="Task_RecordVerified" name="Record verified organic status"><bpmn:extensionElements><zeebe:script expression="=&quot;Verified organic&quot;" resultVariable="organicStatus" /></bpmn:extensionElements><bpmn:incoming>Flow_CertificationVerified</bpmn:incoming><bpmn:outgoing>Flow_RecordVerified_Approved</bpmn:outgoing></bpmn:scriptTask>
+    <bpmn:scriptTask id="Task_FlagRejected" name="Flag rejected organic claim"><bpmn:extensionElements><zeebe:script expression="=&quot;Organic claim rejected&quot;" resultVariable="organicStatus" /></bpmn:extensionElements><bpmn:incoming>Flow_CertificationRejected</bpmn:incoming><bpmn:outgoing>Flow_Flag_NotifyRejected</bpmn:outgoing></bpmn:scriptTask>
+    <bpmn:scriptTask id="Task_NotifyRejected" name="Notify producer of rejected claim"><bpmn:extensionElements><zeebe:script expression="=concatenate(if producerNotifications = null then [] else producerNotifications, [{type: &quot;organic-claim-rejected&quot;, listingId: listingId, message: &quot;The organic claim for \&quot;&quot; + productName + &quot;\&quot; could not be verified. Remove the claim or withhold the listing.&quot;, sentAt: string(now())}])" resultVariable="producerNotifications" /></bpmn:extensionElements><bpmn:incoming>Flow_Flag_NotifyRejected</bpmn:incoming><bpmn:outgoing>Flow_NotifyRejected_Decision</bpmn:outgoing></bpmn:scriptTask>
+    <bpmn:userTask id="Task_RejectedDecision" name="Decide on rejected organic claim"><bpmn:extensionElements><zeebe:userTask /><zeebe:formDefinition formId="rejected-organic-claim-form" /></bpmn:extensionElements><bpmn:incoming>Flow_NotifyRejected_Decision</bpmn:incoming><bpmn:outgoing>Flow_Decision_Gateway</bpmn:outgoing></bpmn:userTask>
+    <bpmn:exclusiveGateway id="Gateway_RemoveClaim" name="Remove organic claim?" default="Flow_RemoveClaimNo"><bpmn:incoming>Flow_Decision_Gateway</bpmn:incoming><bpmn:outgoing>Flow_RemoveClaimYes</bpmn:outgoing><bpmn:outgoing>Flow_RemoveClaimNo</bpmn:outgoing></bpmn:exclusiveGateway>
+    <bpmn:scriptTask id="Task_RemoveClaim" name="Remove organic claim from listing"><bpmn:extensionElements><zeebe:script expression="=false" resultVariable="organicClaimMade" /></bpmn:extensionElements><bpmn:incoming>Flow_RemoveClaimYes</bpmn:incoming><bpmn:outgoing>Flow_Remove_Approved</bpmn:outgoing></bpmn:scriptTask>
+    <bpmn:scriptTask id="Task_WithholdRejected" name="Withhold listing"><bpmn:extensionElements><zeebe:script expression="=&quot;Withheld&quot;" resultVariable="listingStatus" /></bpmn:extensionElements><bpmn:incoming>Flow_RemoveClaimNo</bpmn:incoming><bpmn:outgoing>Flow_WithholdRejected_Notify</bpmn:outgoing></bpmn:scriptTask>
+    <bpmn:scriptTask id="Task_NotifyWithheldRejected" name="Notify producer that listing was withheld"><bpmn:extensionElements><zeebe:script expression="=concatenate(if producerNotifications = null then [] else producerNotifications, [{type: &quot;listing-withheld&quot;, listingId: listingId, message: &quot;Your listing \&quot;&quot; + productName + &quot;\&quot; has been withheld because its organic claim was rejected.&quot;, sentAt: string(now())}])" resultVariable="producerNotifications" /></bpmn:extensionElements><bpmn:incoming>Flow_WithholdRejected_Notify</bpmn:incoming><bpmn:outgoing>Flow_NotifyWithheldRejected_End</bpmn:outgoing></bpmn:scriptTask>
+    <bpmn:endEvent id="End_WithheldRejected" name="Listing withheld"><bpmn:incoming>Flow_NotifyWithheldRejected_End</bpmn:incoming></bpmn:endEvent>
+    <bpmn:intermediateCatchEvent id="Event_CertificationTimeout" name="Certification response timeout"><bpmn:incoming>Flow_Await_Timeout</bpmn:incoming><bpmn:outgoing>Flow_Timeout_Record</bpmn:outgoing><bpmn:timerEventDefinition id="TimerEventDefinition_CertificationTimeout"><bpmn:timeDuration xsi:type="bpmn:tFormalExpression">PT30S</bpmn:timeDuration></bpmn:timerEventDefinition></bpmn:intermediateCatchEvent>
+    <bpmn:scriptTask id="Task_RecordTimeout" name="Record certification timeout"><bpmn:extensionElements><zeebe:script expression="=if certificationAttempts = null then 1 else certificationAttempts + 1" resultVariable="certificationAttempts" /></bpmn:extensionElements><bpmn:incoming>Flow_Timeout_Record</bpmn:incoming><bpmn:outgoing>Flow_Record_Retries</bpmn:outgoing></bpmn:scriptTask>
+    <bpmn:exclusiveGateway id="Gateway_Retries" name="Retry attempts remaining?" default="Flow_RetryNo"><bpmn:incoming>Flow_Record_Retries</bpmn:incoming><bpmn:outgoing>Flow_RetryYes</bpmn:outgoing><bpmn:outgoing>Flow_RetryNo</bpmn:outgoing></bpmn:exclusiveGateway>
+    <bpmn:scriptTask id="Task_FlagManualReview" name="Flag listing for manual review"><bpmn:extensionElements><zeebe:script expression="=&quot;Pending manual review&quot;" resultVariable="listingStatus" /></bpmn:extensionElements><bpmn:incoming>Flow_RetryNo</bpmn:incoming><bpmn:outgoing>Flow_Flag_ManualReview</bpmn:outgoing></bpmn:scriptTask>
+    <bpmn:subProcess id="SubProcess_ManualReview" name="Manually review certification"><bpmn:incoming>Flow_Flag_ManualReview</bpmn:incoming><bpmn:outgoing>Flow_Manual_Gateway</bpmn:outgoing>
+      <bpmn:startEvent id="Start_ManualReview" name="Manual review initiated"><bpmn:outgoing>Flow_M1</bpmn:outgoing></bpmn:startEvent>
+      <bpmn:userTask id="Task_ReviewEvidence" name="Review submitted certification evidence"><bpmn:extensionElements><zeebe:userTask /><zeebe:formDefinition formId="certification-evidence-review-form" /></bpmn:extensionElements><bpmn:incoming>Flow_M1</bpmn:incoming><bpmn:outgoing>Flow_M2</bpmn:outgoing></bpmn:userTask>
+      <bpmn:userTask id="Task_CheckProducerDetails" name="Check producer and certification details"><bpmn:extensionElements><zeebe:userTask /><zeebe:formDefinition formId="producer-certification-check-form" /></bpmn:extensionElements><bpmn:incoming>Flow_M2</bpmn:incoming><bpmn:outgoing>Flow_M3</bpmn:outgoing></bpmn:userTask>
+      <bpmn:userTask id="Task_RecordReviewDecision" name="Record manual review decision"><bpmn:extensionElements><zeebe:userTask /><zeebe:formDefinition formId="manual-certification-review-form" /></bpmn:extensionElements><bpmn:incoming>Flow_M3</bpmn:incoming><bpmn:outgoing>Flow_M4</bpmn:outgoing></bpmn:userTask>
+      <bpmn:endEvent id="End_ManualReview" name="Manual review completed"><bpmn:incoming>Flow_M4</bpmn:incoming></bpmn:endEvent>
+      <bpmn:sequenceFlow id="Flow_M1" sourceRef="Start_ManualReview" targetRef="Task_ReviewEvidence" />
+      <bpmn:sequenceFlow id="Flow_M2" sourceRef="Task_ReviewEvidence" targetRef="Task_CheckProducerDetails" />
+      <bpmn:sequenceFlow id="Flow_M3" sourceRef="Task_CheckProducerDetails" targetRef="Task_RecordReviewDecision" />
+      <bpmn:sequenceFlow id="Flow_M4" sourceRef="Task_RecordReviewDecision" targetRef="End_ManualReview" />
+    </bpmn:subProcess>
+    <bpmn:boundaryEvent id="Boundary_ReviewDeadline" name="Manual review deadline exceeded" cancelActivity="false" attachedToRef="SubProcess_ManualReview"><bpmn:outgoing>Flow_Deadline_Overdue</bpmn:outgoing><bpmn:timerEventDefinition id="TimerEventDefinition_ReviewDeadline"><bpmn:timeDuration xsi:type="bpmn:tFormalExpression">PT24H</bpmn:timeDuration></bpmn:timerEventDefinition></bpmn:boundaryEvent>
+    <bpmn:scriptTask id="Task_FlagOverdue" name="Flag manual review as overdue"><bpmn:extensionElements><zeebe:script expression="=true" resultVariable="manualReviewOverdue" /></bpmn:extensionElements><bpmn:incoming>Flow_Deadline_Overdue</bpmn:incoming><bpmn:outgoing>Flow_Overdue_End</bpmn:outgoing></bpmn:scriptTask>
+    <bpmn:endEvent id="End_EscalationRecorded" name="Escalation recorded"><bpmn:incoming>Flow_Overdue_End</bpmn:incoming></bpmn:endEvent>
+    <bpmn:exclusiveGateway id="Gateway_EvidenceVerified" name="Organic evidence verified?" default="Flow_EvidenceNo"><bpmn:incoming>Flow_Manual_Gateway</bpmn:incoming><bpmn:outgoing>Flow_EvidenceYes</bpmn:outgoing><bpmn:outgoing>Flow_EvidenceNo</bpmn:outgoing></bpmn:exclusiveGateway>
+    <bpmn:scriptTask id="Task_RecordManualVerified" name="Record manually verified certification"><bpmn:extensionElements><zeebe:script expression="=&quot;Verified organic (manual review)&quot;" resultVariable="organicStatus" /></bpmn:extensionElements><bpmn:incoming>Flow_EvidenceYes</bpmn:incoming><bpmn:outgoing>Flow_ManualVerified_Approved</bpmn:outgoing></bpmn:scriptTask>
+    <bpmn:scriptTask id="Task_WithholdManual" name="Withhold listing"><bpmn:extensionElements><zeebe:script expression="=&quot;Withheld&quot;" resultVariable="listingStatus" /></bpmn:extensionElements><bpmn:incoming>Flow_EvidenceNo</bpmn:incoming><bpmn:outgoing>Flow_WithholdManual_Notify</bpmn:outgoing></bpmn:scriptTask>
+    <bpmn:scriptTask id="Task_NotifyWithheldManual" name="Notify producer that listing was withheld"><bpmn:extensionElements><zeebe:script expression="=concatenate(if producerNotifications = null then [] else producerNotifications, [{type: &quot;listing-withheld&quot;, listingId: listingId, message: &quot;Your listing \&quot;&quot; + productName + &quot;\&quot; has been withheld: the organic evidence could not be verified by manual review.&quot;, sentAt: string(now())}])" resultVariable="producerNotifications" /></bpmn:extensionElements><bpmn:incoming>Flow_WithholdManual_Notify</bpmn:incoming><bpmn:outgoing>Flow_NotifyWithheldManual_End</bpmn:outgoing></bpmn:scriptTask>
+    <bpmn:endEvent id="End_WithheldManual" name="Listing withheld"><bpmn:incoming>Flow_NotifyWithheldManual_End</bpmn:incoming></bpmn:endEvent>
+    <bpmn:exclusiveGateway id="Gateway_Approved" name="Listing approved for publication"><bpmn:incoming>Flow_OrganicNo</bpmn:incoming><bpmn:incoming>Flow_RecordVerified_Approved</bpmn:incoming><bpmn:incoming>Flow_Remove_Approved</bpmn:incoming><bpmn:incoming>Flow_ManualVerified_Approved</bpmn:incoming><bpmn:outgoing>Flow_Approved_Prepare</bpmn:outgoing></bpmn:exclusiveGateway>
+    <bpmn:scriptTask id="Task_PreparePublication" name="Prepare validated product for publication"><bpmn:extensionElements><zeebe:script expression="={listingId: listingId, producerName: producerName, name: productName, description: productDescription, category: category, price: price, quantity: quantity, availableFrom: availableFrom, availableUntil: availableUntil, organic: organicClaimMade, organicStatus: if organicClaimMade then organicStatus else &quot;Not organic&quot;}" resultVariable="product" /></bpmn:extensionElements><bpmn:incoming>Flow_Approved_Prepare</bpmn:incoming><bpmn:outgoing>Flow_Prepare_Save</bpmn:outgoing></bpmn:scriptTask>
+    <bpmn:scriptTask id="Task_SaveCatalogue" name="Save product to catalogue"><bpmn:extensionElements><zeebe:script expression="={product: product, savedAt: string(now())}" resultVariable="catalogueEntry" /></bpmn:extensionElements><bpmn:incoming>Flow_Prepare_Save</bpmn:incoming><bpmn:outgoing>Flow_Save_Trace</bpmn:outgoing></bpmn:scriptTask>
+    <bpmn:callActivity id="Call_RecordTraceability" name="Record product traceability"><bpmn:extensionElements><zeebe:calledElement processId="record-product-traceability" propagateAllChildVariables="true" /></bpmn:extensionElements><bpmn:incoming>Flow_Save_Trace</bpmn:incoming><bpmn:outgoing>Flow_Trace_Publish</bpmn:outgoing></bpmn:callActivity>
+    <bpmn:scriptTask id="Task_PublishListing" name="Publish product listing"><bpmn:extensionElements><zeebe:script expression="=&quot;Published&quot;" resultVariable="listingStatus" /></bpmn:extensionElements><bpmn:incoming>Flow_Trace_Publish</bpmn:incoming><bpmn:outgoing>Flow_Publish_Notify</bpmn:outgoing></bpmn:scriptTask>
+    <bpmn:scriptTask id="Task_NotifyPublished" name="Notify producer of successful publication"><bpmn:extensionElements><zeebe:script expression="=concatenate(if producerNotifications = null then [] else producerNotifications, [{type: &quot;listing-published&quot;, listingId: listingId, message: &quot;Your listing \&quot;&quot; + productName + &quot;\&quot; is now published in the catalogue.&quot;, sentAt: string(now())}])" resultVariable="producerNotifications" /></bpmn:extensionElements><bpmn:incoming>Flow_Publish_Notify</bpmn:incoming><bpmn:outgoing>Flow_Notify_End</bpmn:outgoing></bpmn:scriptTask>
+    <bpmn:endEvent id="End_Published" name="Product listing published successfully"><bpmn:incoming>Flow_Notify_End</bpmn:incoming></bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_Start_Submit" sourceRef="Start_ProductListing" targetRef="Task_SubmitDetails" />
+    <bpmn:sequenceFlow id="Flow_Submit_Merge" sourceRef="Task_SubmitDetails" targetRef="Gateway_MergeValidation" />
+    <bpmn:sequenceFlow id="Flow_Merge_Validate" sourceRef="Gateway_MergeValidation" targetRef="SubProcess_ValidateDetails" />
+    <bpmn:sequenceFlow id="Flow_Validate_Gateway" sourceRef="SubProcess_ValidateDetails" targetRef="Gateway_DetailsValid" />
+    <bpmn:sequenceFlow id="Flow_DetailsValid" name="Yes" sourceRef="Gateway_DetailsValid" targetRef="Task_CheckOrganicClaim"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=productDetailsValid = true</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_DetailsInvalid" name="No" sourceRef="Gateway_DetailsValid" targetRef="Task_RequestCorrections" />
+    <bpmn:sequenceFlow id="Flow_Request_Correct" sourceRef="Task_RequestCorrections" targetRef="Task_CorrectDetails" />
+    <bpmn:sequenceFlow id="Flow_Correct_Merge" sourceRef="Task_CorrectDetails" targetRef="Gateway_MergeValidation" />
+    <bpmn:sequenceFlow id="Flow_Check_Gateway" sourceRef="Task_CheckOrganicClaim" targetRef="Gateway_OrganicClaim" />
+    <bpmn:sequenceFlow id="Flow_OrganicYes" name="Yes" sourceRef="Gateway_OrganicClaim" targetRef="Gateway_MergeRequest"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=organicClaimMade = true</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_OrganicNo" name="No" sourceRef="Gateway_OrganicClaim" targetRef="Gateway_Approved" />
+    <bpmn:sequenceFlow id="Flow_Merge_Request" sourceRef="Gateway_MergeRequest" targetRef="Task_RequestCertification" />
+    <bpmn:sequenceFlow id="Flow_Request_Await" sourceRef="Task_RequestCertification" targetRef="Gateway_AwaitCertification" />
+    <bpmn:sequenceFlow id="Flow_Await_Result" sourceRef="Gateway_AwaitCertification" targetRef="Event_CertificationResult" />
+    <bpmn:sequenceFlow id="Flow_Await_Timeout" sourceRef="Gateway_AwaitCertification" targetRef="Event_CertificationTimeout" />
+    <bpmn:sequenceFlow id="Flow_Result_Verified" sourceRef="Event_CertificationResult" targetRef="Gateway_CertificationVerified" />
+    <bpmn:sequenceFlow id="Flow_CertificationVerified" name="Yes" sourceRef="Gateway_CertificationVerified" targetRef="Task_RecordVerified"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=certificationStatus = "verified"</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_CertificationRejected" name="No" sourceRef="Gateway_CertificationVerified" targetRef="Task_FlagRejected" />
+    <bpmn:sequenceFlow id="Flow_RecordVerified_Approved" sourceRef="Task_RecordVerified" targetRef="Gateway_Approved" />
+    <bpmn:sequenceFlow id="Flow_Flag_NotifyRejected" sourceRef="Task_FlagRejected" targetRef="Task_NotifyRejected" />
+    <bpmn:sequenceFlow id="Flow_NotifyRejected_Decision" sourceRef="Task_NotifyRejected" targetRef="Task_RejectedDecision" />
+    <bpmn:sequenceFlow id="Flow_Decision_Gateway" sourceRef="Task_RejectedDecision" targetRef="Gateway_RemoveClaim" />
+    <bpmn:sequenceFlow id="Flow_RemoveClaimYes" name="Yes" sourceRef="Gateway_RemoveClaim" targetRef="Task_RemoveClaim"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=rejectedClaimDecision = "remove-claim"</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_RemoveClaimNo" name="No" sourceRef="Gateway_RemoveClaim" targetRef="Task_WithholdRejected" />
+    <bpmn:sequenceFlow id="Flow_Remove_Approved" sourceRef="Task_RemoveClaim" targetRef="Gateway_Approved" />
+    <bpmn:sequenceFlow id="Flow_WithholdRejected_Notify" sourceRef="Task_WithholdRejected" targetRef="Task_NotifyWithheldRejected" />
+    <bpmn:sequenceFlow id="Flow_NotifyWithheldRejected_End" sourceRef="Task_NotifyWithheldRejected" targetRef="End_WithheldRejected" />
+    <bpmn:sequenceFlow id="Flow_Timeout_Record" sourceRef="Event_CertificationTimeout" targetRef="Task_RecordTimeout" />
+    <bpmn:sequenceFlow id="Flow_Record_Retries" sourceRef="Task_RecordTimeout" targetRef="Gateway_Retries" />
+    <bpmn:sequenceFlow id="Flow_RetryYes" name="Yes" sourceRef="Gateway_Retries" targetRef="Gateway_MergeRequest"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=certificationAttempts &lt; 3</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_RetryNo" name="No" sourceRef="Gateway_Retries" targetRef="Task_FlagManualReview" />
+    <bpmn:sequenceFlow id="Flow_Flag_ManualReview" sourceRef="Task_FlagManualReview" targetRef="SubProcess_ManualReview" />
+    <bpmn:sequenceFlow id="Flow_Manual_Gateway" sourceRef="SubProcess_ManualReview" targetRef="Gateway_EvidenceVerified" />
+    <bpmn:sequenceFlow id="Flow_Deadline_Overdue" sourceRef="Boundary_ReviewDeadline" targetRef="Task_FlagOverdue" />
+    <bpmn:sequenceFlow id="Flow_Overdue_End" sourceRef="Task_FlagOverdue" targetRef="End_EscalationRecorded" />
+    <bpmn:sequenceFlow id="Flow_EvidenceYes" name="Yes" sourceRef="Gateway_EvidenceVerified" targetRef="Task_RecordManualVerified"><bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=manualReviewDecision = "approve"</bpmn:conditionExpression></bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_EvidenceNo" name="No" sourceRef="Gateway_EvidenceVerified" targetRef="Task_WithholdManual" />
+    <bpmn:sequenceFlow id="Flow_ManualVerified_Approved" sourceRef="Task_RecordManualVerified" targetRef="Gateway_Approved" />
+    <bpmn:sequenceFlow id="Flow_WithholdManual_Notify" sourceRef="Task_WithholdManual" targetRef="Task_NotifyWithheldManual" />
+    <bpmn:sequenceFlow id="Flow_NotifyWithheldManual_End" sourceRef="Task_NotifyWithheldManual" targetRef="End_WithheldManual" />
+    <bpmn:sequenceFlow id="Flow_Approved_Prepare" sourceRef="Gateway_Approved" targetRef="Task_PreparePublication" />
+    <bpmn:sequenceFlow id="Flow_Prepare_Save" sourceRef="Task_PreparePublication" targetRef="Task_SaveCatalogue" />
+    <bpmn:sequenceFlow id="Flow_Save_Trace" sourceRef="Task_SaveCatalogue" targetRef="Call_RecordTraceability" />
+    <bpmn:sequenceFlow id="Flow_Trace_Publish" sourceRef="Call_RecordTraceability" targetRef="Task_PublishListing" />
+    <bpmn:sequenceFlow id="Flow_Publish_Notify" sourceRef="Task_PublishListing" targetRef="Task_NotifyPublished" />
+    <bpmn:sequenceFlow id="Flow_Notify_End" sourceRef="Task_NotifyPublished" targetRef="End_Published" />
   </bpmn:process>
+  <bpmn:message id="Message_CertificationResult" name="certification-result"><bpmn:extensionElements><zeebe:subscription correlationKey="=listingId" /></bpmn:extensionElements></bpmn:message>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_ProductListing">
+    <bpmndi:BPMNPlane id="BPMNPlane_ProductListing" bpmnElement="product-listing-publication">
+      <bpmndi:BPMNShape id="Start_ProductListing_di" bpmnElement="Start_ProductListing"><dc:Bounds x="162" y="452" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_SubmitDetails_di" bpmnElement="Task_SubmitDetails"><dc:Bounds x="280" y="430" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_MergeValidation_di" bpmnElement="Gateway_MergeValidation" isMarkerVisible="true"><dc:Bounds x="455" y="445" width="50" height="50" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="SubProcess_ValidateDetails_di" bpmnElement="SubProcess_ValidateDetails" isExpanded="false"><dc:Bounds x="580" y="430" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_DetailsValid_di" bpmnElement="Gateway_DetailsValid" isMarkerVisible="true"><dc:Bounds x="755" y="445" width="50" height="50" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_RequestCorrections_di" bpmnElement="Task_RequestCorrections"><dc:Bounds x="730" y="300" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_CorrectDetails_di" bpmnElement="Task_CorrectDetails"><dc:Bounds x="580" y="300" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_CheckOrganicClaim_di" bpmnElement="Task_CheckOrganicClaim"><dc:Bounds x="880" y="430" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_OrganicClaim_di" bpmnElement="Gateway_OrganicClaim" isMarkerVisible="true"><dc:Bounds x="1055" y="445" width="50" height="50" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_MergeRequest_di" bpmnElement="Gateway_MergeRequest" isMarkerVisible="true"><dc:Bounds x="1205" y="445" width="50" height="50" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_RequestCertification_di" bpmnElement="Task_RequestCertification"><dc:Bounds x="1330" y="430" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_AwaitCertification_di" bpmnElement="Gateway_AwaitCertification"><dc:Bounds x="1505" y="445" width="50" height="50" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_CertificationResult_di" bpmnElement="Event_CertificationResult"><dc:Bounds x="1662" y="452" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_CertificationVerified_di" bpmnElement="Gateway_CertificationVerified" isMarkerVisible="true"><dc:Bounds x="1805" y="445" width="50" height="50" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_RecordVerified_di" bpmnElement="Task_RecordVerified"><dc:Bounds x="1930" y="430" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_FlagRejected_di" bpmnElement="Task_FlagRejected"><dc:Bounds x="1780" y="300" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_NotifyRejected_di" bpmnElement="Task_NotifyRejected"><dc:Bounds x="1930" y="300" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_RejectedDecision_di" bpmnElement="Task_RejectedDecision"><dc:Bounds x="2080" y="300" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_RemoveClaim_di" bpmnElement="Gateway_RemoveClaim" isMarkerVisible="true"><dc:Bounds x="2255" y="315" width="50" height="50" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_RemoveClaim_di" bpmnElement="Task_RemoveClaim"><dc:Bounds x="2380" y="300" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_WithholdRejected_di" bpmnElement="Task_WithholdRejected"><dc:Bounds x="2230" y="170" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_NotifyWithheldRejected_di" bpmnElement="Task_NotifyWithheldRejected"><dc:Bounds x="2380" y="170" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_WithheldRejected_di" bpmnElement="End_WithheldRejected"><dc:Bounds x="2562" y="192" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_CertificationTimeout_di" bpmnElement="Event_CertificationTimeout"><dc:Bounds x="1512" y="582" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_RecordTimeout_di" bpmnElement="Task_RecordTimeout"><dc:Bounds x="1630" y="560" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Retries_di" bpmnElement="Gateway_Retries" isMarkerVisible="true"><dc:Bounds x="1805" y="575" width="50" height="50" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_FlagManualReview_di" bpmnElement="Task_FlagManualReview"><dc:Bounds x="1930" y="560" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="SubProcess_ManualReview_di" bpmnElement="SubProcess_ManualReview" isExpanded="false"><dc:Bounds x="2080" y="560" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Boundary_ReviewDeadline_di" bpmnElement="Boundary_ReviewDeadline"><dc:Bounds x="2112" y="622" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_FlagOverdue_di" bpmnElement="Task_FlagOverdue"><dc:Bounds x="2080" y="720" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_EscalationRecorded_di" bpmnElement="End_EscalationRecorded"><dc:Bounds x="1962" y="742" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_EvidenceVerified_di" bpmnElement="Gateway_EvidenceVerified" isMarkerVisible="true"><dc:Bounds x="2255" y="575" width="50" height="50" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_RecordManualVerified_di" bpmnElement="Task_RecordManualVerified"><dc:Bounds x="2380" y="560" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_WithholdManual_di" bpmnElement="Task_WithholdManual"><dc:Bounds x="2380" y="690" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_NotifyWithheldManual_di" bpmnElement="Task_NotifyWithheldManual"><dc:Bounds x="2530" y="690" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_WithheldManual_di" bpmnElement="End_WithheldManual"><dc:Bounds x="2712" y="712" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Approved_di" bpmnElement="Gateway_Approved" isMarkerVisible="true"><dc:Bounds x="2705" y="445" width="50" height="50" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_PreparePublication_di" bpmnElement="Task_PreparePublication"><dc:Bounds x="2830" y="430" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_SaveCatalogue_di" bpmnElement="Task_SaveCatalogue"><dc:Bounds x="2980" y="430" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Call_RecordTraceability_di" bpmnElement="Call_RecordTraceability"><dc:Bounds x="3130" y="430" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_PublishListing_di" bpmnElement="Task_PublishListing"><dc:Bounds x="3280" y="430" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_NotifyPublished_di" bpmnElement="Task_NotifyPublished"><dc:Bounds x="3430" y="430" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Published_di" bpmnElement="End_Published"><dc:Bounds x="3612" y="452" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_Start_Submit_di" bpmnElement="Flow_Start_Submit"><di:waypoint x="198" y="470" /><di:waypoint x="280" y="470" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Submit_Merge_di" bpmnElement="Flow_Submit_Merge"><di:waypoint x="380" y="470" /><di:waypoint x="455" y="470" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Merge_Validate_di" bpmnElement="Flow_Merge_Validate"><di:waypoint x="505" y="470" /><di:waypoint x="580" y="470" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Validate_Gateway_di" bpmnElement="Flow_Validate_Gateway"><di:waypoint x="680" y="470" /><di:waypoint x="755" y="470" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_DetailsValid_di" bpmnElement="Flow_DetailsValid"><di:waypoint x="805" y="470" /><di:waypoint x="880" y="470" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_DetailsInvalid_di" bpmnElement="Flow_DetailsInvalid"><di:waypoint x="780" y="445" /><di:waypoint x="780" y="380" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Request_Correct_di" bpmnElement="Flow_Request_Correct"><di:waypoint x="730" y="340" /><di:waypoint x="680" y="340" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Correct_Merge_di" bpmnElement="Flow_Correct_Merge"><di:waypoint x="580" y="340" /><di:waypoint x="480" y="340" /><di:waypoint x="480" y="445" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Check_Gateway_di" bpmnElement="Flow_Check_Gateway"><di:waypoint x="980" y="470" /><di:waypoint x="1055" y="470" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_OrganicYes_di" bpmnElement="Flow_OrganicYes"><di:waypoint x="1105" y="470" /><di:waypoint x="1205" y="470" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_OrganicNo_di" bpmnElement="Flow_OrganicNo"><di:waypoint x="1080" y="445" /><di:waypoint x="1080" y="135" /><di:waypoint x="2730" y="135" /><di:waypoint x="2730" y="445" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Merge_Request_di" bpmnElement="Flow_Merge_Request"><di:waypoint x="1255" y="470" /><di:waypoint x="1330" y="470" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Request_Await_di" bpmnElement="Flow_Request_Await"><di:waypoint x="1430" y="470" /><di:waypoint x="1505" y="470" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Await_Result_di" bpmnElement="Flow_Await_Result"><di:waypoint x="1555" y="470" /><di:waypoint x="1662" y="470" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Await_Timeout_di" bpmnElement="Flow_Await_Timeout"><di:waypoint x="1530" y="495" /><di:waypoint x="1530" y="582" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Result_Verified_di" bpmnElement="Flow_Result_Verified"><di:waypoint x="1698" y="470" /><di:waypoint x="1805" y="470" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_CertificationVerified_di" bpmnElement="Flow_CertificationVerified"><di:waypoint x="1855" y="470" /><di:waypoint x="1930" y="470" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_CertificationRejected_di" bpmnElement="Flow_CertificationRejected"><di:waypoint x="1830" y="445" /><di:waypoint x="1830" y="380" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_RecordVerified_Approved_di" bpmnElement="Flow_RecordVerified_Approved"><di:waypoint x="2030" y="470" /><di:waypoint x="2705" y="470" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Flag_NotifyRejected_di" bpmnElement="Flow_Flag_NotifyRejected"><di:waypoint x="1880" y="340" /><di:waypoint x="1930" y="340" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_NotifyRejected_Decision_di" bpmnElement="Flow_NotifyRejected_Decision"><di:waypoint x="2030" y="340" /><di:waypoint x="2080" y="340" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Decision_Gateway_di" bpmnElement="Flow_Decision_Gateway"><di:waypoint x="2180" y="340" /><di:waypoint x="2255" y="340" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_RemoveClaimYes_di" bpmnElement="Flow_RemoveClaimYes"><di:waypoint x="2305" y="340" /><di:waypoint x="2380" y="340" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_RemoveClaimNo_di" bpmnElement="Flow_RemoveClaimNo"><di:waypoint x="2280" y="315" /><di:waypoint x="2280" y="250" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Remove_Approved_di" bpmnElement="Flow_Remove_Approved"><di:waypoint x="2480" y="340" /><di:waypoint x="2730" y="340" /><di:waypoint x="2730" y="445" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_WithholdRejected_Notify_di" bpmnElement="Flow_WithholdRejected_Notify"><di:waypoint x="2330" y="210" /><di:waypoint x="2380" y="210" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_NotifyWithheldRejected_End_di" bpmnElement="Flow_NotifyWithheldRejected_End"><di:waypoint x="2480" y="210" /><di:waypoint x="2562" y="210" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Timeout_Record_di" bpmnElement="Flow_Timeout_Record"><di:waypoint x="1548" y="600" /><di:waypoint x="1630" y="600" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Record_Retries_di" bpmnElement="Flow_Record_Retries"><di:waypoint x="1730" y="600" /><di:waypoint x="1805" y="600" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_RetryYes_di" bpmnElement="Flow_RetryYes"><di:waypoint x="1830" y="625" /><di:waypoint x="1830" y="675" /><di:waypoint x="1230" y="675" /><di:waypoint x="1230" y="495" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_RetryNo_di" bpmnElement="Flow_RetryNo"><di:waypoint x="1855" y="600" /><di:waypoint x="1930" y="600" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Flag_ManualReview_di" bpmnElement="Flow_Flag_ManualReview"><di:waypoint x="2030" y="600" /><di:waypoint x="2080" y="600" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Manual_Gateway_di" bpmnElement="Flow_Manual_Gateway"><di:waypoint x="2180" y="600" /><di:waypoint x="2255" y="600" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Deadline_Overdue_di" bpmnElement="Flow_Deadline_Overdue"><di:waypoint x="2130" y="658" /><di:waypoint x="2130" y="720" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Overdue_End_di" bpmnElement="Flow_Overdue_End"><di:waypoint x="2080" y="760" /><di:waypoint x="1998" y="760" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_EvidenceYes_di" bpmnElement="Flow_EvidenceYes"><di:waypoint x="2305" y="600" /><di:waypoint x="2380" y="600" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_EvidenceNo_di" bpmnElement="Flow_EvidenceNo"><di:waypoint x="2280" y="625" /><di:waypoint x="2280" y="730" /><di:waypoint x="2380" y="730" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ManualVerified_Approved_di" bpmnElement="Flow_ManualVerified_Approved"><di:waypoint x="2480" y="600" /><di:waypoint x="2730" y="600" /><di:waypoint x="2730" y="495" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_WithholdManual_Notify_di" bpmnElement="Flow_WithholdManual_Notify"><di:waypoint x="2480" y="730" /><di:waypoint x="2530" y="730" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_NotifyWithheldManual_End_di" bpmnElement="Flow_NotifyWithheldManual_End"><di:waypoint x="2630" y="730" /><di:waypoint x="2712" y="730" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Approved_Prepare_di" bpmnElement="Flow_Approved_Prepare"><di:waypoint x="2755" y="470" /><di:waypoint x="2830" y="470" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Prepare_Save_di" bpmnElement="Flow_Prepare_Save"><di:waypoint x="2930" y="470" /><di:waypoint x="2980" y="470" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Save_Trace_di" bpmnElement="Flow_Save_Trace"><di:waypoint x="3080" y="470" /><di:waypoint x="3130" y="470" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Trace_Publish_di" bpmnElement="Flow_Trace_Publish"><di:waypoint x="3230" y="470" /><di:waypoint x="3280" y="470" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Publish_Notify_di" bpmnElement="Flow_Publish_Notify"><di:waypoint x="3380" y="470" /><di:waypoint x="3430" y="470" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Notify_End_di" bpmnElement="Flow_Notify_End"><di:waypoint x="3530" y="470" /><di:waypoint x="3612" y="470" /></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_ValidateDetails">
+    <bpmndi:BPMNPlane id="BPMNPlane_ValidateDetails" bpmnElement="SubProcess_ValidateDetails">
+      <bpmndi:BPMNShape id="Start_Validation_di" bpmnElement="Start_Validation"><dc:Bounds x="162" y="182" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ValidateMandatory_di" bpmnElement="Task_ValidateMandatory"><dc:Bounds x="280" y="160" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ValidatePriceStock_di" bpmnElement="Task_ValidatePriceStock"><dc:Bounds x="430" y="160" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ValidateSeason_di" bpmnElement="Task_ValidateSeason"><dc:Bounds x="580" y="160" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ValidateOrigin_di" bpmnElement="Task_ValidateOrigin"><dc:Bounds x="730" y="160" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ValidateAllergenDates_di" bpmnElement="Task_ValidateAllergenDates"><dc:Bounds x="880" y="160" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_CheckCertificationDetails_di" bpmnElement="Task_CheckCertificationDetails"><dc:Bounds x="1030" y="160" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Validation_di" bpmnElement="End_Validation"><dc:Bounds x="1212" y="182" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_V1_di" bpmnElement="Flow_V1"><di:waypoint x="198" y="200" /><di:waypoint x="280" y="200" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_V2_di" bpmnElement="Flow_V2"><di:waypoint x="380" y="200" /><di:waypoint x="430" y="200" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_V3_di" bpmnElement="Flow_V3"><di:waypoint x="530" y="200" /><di:waypoint x="580" y="200" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_V4_di" bpmnElement="Flow_V4"><di:waypoint x="680" y="200" /><di:waypoint x="730" y="200" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_V5_di" bpmnElement="Flow_V5"><di:waypoint x="830" y="200" /><di:waypoint x="880" y="200" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_V6_di" bpmnElement="Flow_V6"><di:waypoint x="980" y="200" /><di:waypoint x="1030" y="200" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_V7_di" bpmnElement="Flow_V7"><di:waypoint x="1130" y="200" /><di:waypoint x="1212" y="200" /></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_ManualReview">
+    <bpmndi:BPMNPlane id="BPMNPlane_ManualReview" bpmnElement="SubProcess_ManualReview">
+      <bpmndi:BPMNShape id="Start_ManualReview_di" bpmnElement="Start_ManualReview"><dc:Bounds x="162" y="182" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ReviewEvidence_di" bpmnElement="Task_ReviewEvidence"><dc:Bounds x="280" y="160" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_CheckProducerDetails_di" bpmnElement="Task_CheckProducerDetails"><dc:Bounds x="430" y="160" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_RecordReviewDecision_di" bpmnElement="Task_RecordReviewDecision"><dc:Bounds x="580" y="160" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_ManualReview_di" bpmnElement="End_ManualReview"><dc:Bounds x="762" y="182" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_M1_di" bpmnElement="Flow_M1"><di:waypoint x="198" y="200" /><di:waypoint x="280" y="200" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_M2_di" bpmnElement="Flow_M2"><di:waypoint x="380" y="200" /><di:waypoint x="430" y="200" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_M3_di" bpmnElement="Flow_M3"><di:waypoint x="530" y="200" /><di:waypoint x="580" y="200" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_M4_di" bpmnElement="Flow_M4"><di:waypoint x="680" y="200" /><di:waypoint x="762" y="200" /></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
 </bpmn:definitions>
