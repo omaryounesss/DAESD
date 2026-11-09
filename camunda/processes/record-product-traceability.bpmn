@@ -1,20 +1,58 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_RecordTraceability" targetNamespace="https://daesd.uwe.ac.uk/camunda" exporter="Camunda Modeler" exporterVersion="5.30.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.6.0">
-  <bpmn:process id="record-product-traceability" name="Record product traceability" isExecutable="true">
-    <bpmn:documentation>Called from product-listing-publication. Source model: models/operational-bpmn/functionality-1/record_product_traceability.bpmn.</bpmn:documentation>
-    <bpmn:startEvent id="Start_Traceability" name="Traceability recording initiated"><bpmn:outgoing>Flow_T1</bpmn:outgoing></bpmn:startEvent>
-    <bpmn:scriptTask id="Task_SaveTraceability" name="Save traceability record"><bpmn:extensionElements><zeebe:script expression="={listingId: listingId, producerName: producerName, productName: productName, origin: origin, harvestDate: harvestDate, bestBeforeDate: bestBeforeDate, allergens: allergens, organic: organicClaimMade, certificationReference: if organicClaimMade then certificationReference else null, recordedAt: string(now())}" resultVariable="traceabilityRecord" /></bpmn:extensionElements><bpmn:incoming>Flow_T1</bpmn:incoming><bpmn:outgoing>Flow_T2</bpmn:outgoing></bpmn:scriptTask>
-    <bpmn:endEvent id="End_Traceability" name="Traceability record saved"><bpmn:incoming>Flow_T2</bpmn:incoming></bpmn:endEvent>
-    <bpmn:sequenceFlow id="Flow_T1" sourceRef="Start_Traceability" targetRef="Task_SaveTraceability" />
-    <bpmn:sequenceFlow id="Flow_T2" sourceRef="Task_SaveTraceability" targetRef="End_Traceability" />
+<?xml version='1.0' encoding='UTF-8'?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:modeler="http://camunda.org/schema/modeler/1.0" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Web Modeler" exporterVersion="e24511c" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.6.0">
+  <bpmn:process id="record_product_traceability" name="Record product traceability" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_1" name="Traceability recording initiated">
+      <bpmn:outgoing>Flow_0l0ssk8</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_0l0ssk8" sourceRef="StartEvent_1" targetRef="Activity_1nisuqu"/>
+    <bpmn:endEvent id="Event_1tflbik" name="Traceability record saved">
+      <bpmn:incoming>Flow_0afqivw</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_0afqivw" sourceRef="Activity_1nisuqu" targetRef="Event_1tflbik"/>
+    <bpmn:scriptTask id="Activity_1nisuqu" name="Save traceability record">
+      <bpmn:extensionElements><zeebe:script expression="={listingId: listingId, producerName: producerName, productName: productName, origin: origin, harvestDate: harvestDate, bestBeforeDate: bestBeforeDate, allergens: allergens, organic: organicClaimMade, certificationReference: if organicClaimMade then certificationReference else null, recordedAt: string(now())}" resultVariable="traceabilityRecord"/></bpmn:extensionElements><bpmn:incoming>Flow_0l0ssk8</bpmn:incoming>
+      <bpmn:outgoing>Flow_0afqivw</bpmn:outgoing>
+      <bpmn:dataOutputAssociation id="DataOutputAssociation_1vt0knv">
+        <bpmn:targetRef>DataStoreReference_1kzz7zr</bpmn:targetRef>
+      </bpmn:dataOutputAssociation>
+    </bpmn:scriptTask>
+    <bpmn:dataStoreReference id="DataStoreReference_1kzz7zr" name="Traceability Records"/>
   </bpmn:process>
-  <bpmndi:BPMNDiagram id="BPMNDiagram_RecordTraceability">
-    <bpmndi:BPMNPlane id="BPMNPlane_RecordTraceability" bpmnElement="record-product-traceability">
-      <bpmndi:BPMNShape id="Start_Traceability_di" bpmnElement="Start_Traceability"><dc:Bounds x="162" y="182" width="36" height="36" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_SaveTraceability_di" bpmnElement="Task_SaveTraceability"><dc:Bounds x="280" y="160" width="100" height="80" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="End_Traceability_di" bpmnElement="End_Traceability"><dc:Bounds x="462" y="182" width="36" height="36" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNEdge id="Flow_T1_di" bpmnElement="Flow_T1"><di:waypoint x="198" y="200" /><di:waypoint x="280" y="200" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_T2_di" bpmnElement="Flow_T2"><di:waypoint x="380" y="200" /><di:waypoint x="462" y="200" /></bpmndi:BPMNEdge>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="record_product_traceability">
+      <bpmndi:BPMNShape id="Activity_0t89xyx_di" bpmnElement="Activity_1nisuqu">
+        <dc:Bounds x="240" y="78" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataStoreReference_1kzz7zr_di" bpmnElement="DataStoreReference_1kzz7zr">
+        <dc:Bounds x="265" y="225" width="50" height="50"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="256" y="282" width="68" height="27"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1tflbik_di" bpmnElement="Event_1tflbik">
+        <dc:Bounds x="422" y="100" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="408" y="143" width="64" height="27"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
+        <dc:Bounds x="132" y="100" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="107" y="143" width="87" height="27"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_0l0ssk8_di" bpmnElement="Flow_0l0ssk8">
+        <di:waypoint x="168" y="118"/>
+        <di:waypoint x="240" y="118"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0afqivw_di" bpmnElement="Flow_0afqivw">
+        <di:waypoint x="340" y="118"/>
+        <di:waypoint x="422" y="118"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_1vt0knv_di" bpmnElement="DataOutputAssociation_1vt0knv">
+        <di:waypoint x="290" y="158"/>
+        <di:waypoint x="290" y="225"/>
+      </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </bpmn:definitions>
