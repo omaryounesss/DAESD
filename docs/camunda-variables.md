@@ -3,28 +3,31 @@
 | | |
 |---|---|
 | **Process** | `product-listing-publication` (`camunda/processes/product-listing-publication.bpmn`) |
-| **Called process** | `record-product-traceability` (`camunda/processes/record-product-traceability.bpmn`) |
-| **Source model** | `models/operational-bpmn/functionality-1/product-listing.bpmn` (Zain-Eldin Sharaf, M3) |
+| **Called process** | `record_product_traceability` (`camunda/processes/record-product-traceability.bpmn`) |
+| **Source model** | `models/operational-bpmn/functionality-1/product-listing.bpmn` and `record_product_traceability.bpmn` (Zain-Eldin Sharaf, M3) |
 | **Owner** | Omar Fathy (M4) |
 | **Backlog** | E1-01 to E1-08 (#30 to #37) |
 
 ## 1. From operational model to executable process
 
-Element names are the same as in the operational model. Where an element had to change type to run in Camunda 8, the table below says why.
+The executable process **is Zain's operational model made runnable**. It is a copy of his file with the same pools (Producer, Marketplace, Organic Certification Service), lanes (Marketplace Platform, Marketplace Administrator), data objects, data stores, message flows, layout, element names and gateway variables. His original stays unchanged in `models/` as the operational artefact.
+
+Element IDs were renamed from generated ones (e.g. `Activity_1nu9k0q`) to readable ones (e.g. `Task_CheckOrganicClaim`), so Operate and the tests are easy to follow. This does not change the diagram.
+
+What was added or changed to make it run:
 
 | Operational model element | Executable element | Reason |
 |---|---|---|
-| Message start "Product details received" | None start "Producer starts listing" and user task "Submit product details" | The producer is a separate pool in the operational model. In Camunda the producer works in Tasklist, so the message becomes a form. |
-| Send task "Request product corrections" and message catch "Corrected product details received" | Script task "Request product corrections" and user task "Submit corrected product details" | Same reason: the producer replies through a form. |
-| Send task "Notify producer of rejected claim" and message catch "Producer decision received" | Script task "Notify producer of rejected claim" and user task "Decide on rejected organic claim" | Same reason. |
-| Send tasks "Notify producer …" | Script tasks that add an entry to `producerNotifications` | Notifications are simulated, and each one is visible in Operate as evidence. |
-| Service tasks (validation, record, flag, prepare, save, publish) | FEEL script tasks | Internal platform logic runs inside Camunda, so no extra worker is needed. |
-| Send task "Request certification verification" | Send task with job type `request-certification-verification` | This is the only external system call. It is implemented by the simulated certification service (E4-01, M5). |
-| Event-based gateway, message "Certification result received", timer "Certification response timeout" (30 s) | Unchanged | Message `certification-result`, correlated on `listingId`. |
-| Sub-processes "Validate product details" and "Manually review certification" | Unchanged (collapsed, drill down in Modeler) | |
-| Non-interrupting timer "Manual review deadline exceeded" (24 h) | Unchanged | |
-| Call activity "Record product traceability" | Unchanged; calls `record-product-traceability` | |
-| Data stores (Product Catalogue, Certification Records, Traceability Records) | Process variables `catalogueEntry`, `organicStatus`, `traceabilityRecord` | A real database is out of scope for Task 1. |
+| Message start "Product details received" (from the Producer pool) | None start "Producer starts listing" and new user task "Submit product details"; the Producer message flow now points at the form | In Camunda the producer works in Tasklist, so the incoming message becomes a form. |
+| Message catch "Corrected product details received" | User task "Submit corrected product details" (same place, same message flow) | Same reason: the producer replies through a form. |
+| Message catch "Producer decision received" | User task "Decide on rejected organic claim" (same place, same message flow) | Same reason. |
+| Send tasks "Request product corrections" and "Notify producer …" | Script tasks that add an entry to `producerNotifications` | Notifications are simulated, and each one is visible in Operate as evidence. The message flows to the Producer pool are kept. |
+| Service tasks and the two plain tasks (validation, record, flag, remove claim, withhold, prepare, save, publish) | FEEL script tasks | Internal platform logic runs inside Camunda, so no extra worker is needed. |
+| Send task "Request certification verification" | Unchanged, with job type `request-certification-verification` | The only external system call. It is implemented by the simulated certification service (E4-01, M5). |
+| Message event "Certification result received" | Unchanged, with message `certification-result` correlated on `listingId` | The service's `certificationStatus` is mapped onto Zain's `certificationVerified` variable. |
+| Timers `=PT30S` and `=PT24H` | `PT30S` and `PT24H` | A leading `=` makes Camunda read the value as a FEEL expression, which fails. |
+| Call activity `=record_product_traceability` | `record_product_traceability`, with `traceabilityRecord` mapped back | With the `=` the process id was read as a variable name. |
+| Sub-processes, event-based gateway, non-interrupting 24 h timer, lanes, data objects and data stores | Unchanged | Data stores are represented by the process variables `catalogueEntry`, `organicStatus` and `traceabilityRecord`; a real database is out of scope for Task 1. |
 
 ## 2. Business rules
 
@@ -45,16 +48,23 @@ The form already blocks a missing field and a price of zero. The cross-field dat
 
 ### Routing
 
-| Gateway | Condition | Default |
+The Yes conditions are Zain's, unchanged:
+
+| Gateway | Condition (Zain's) | Default |
 |---|---|---|
 | Product details valid? | `productDetailsValid = true` → Yes | No → request corrections |
 | Organic claim made? | `organicClaimMade = true` → Yes | No → publication |
-| Certification verified? | `certificationStatus = "verified"` → Yes | No → rejected-claim path |
+| Certification verified? | `certificationVerified = true` → Yes | No → rejected-claim path |
 | Retry attempts remaining? | `certificationAttempts < 3` → retry | No → manual review |
-| Remove organic claim? | `rejectedClaimDecision = "remove-claim"` → Yes | No → withhold |
-| Organic evidence verified? | `manualReviewDecision = "approve"` → Yes | No → withhold |
+| Remove organic claim? | `removeOrganicClaim = true` → Yes | No → withhold |
+| Organic evidence verified? | `manualCertificationVerified = true` → Yes | No → withhold |
 
-Every gateway has a default flow, so a missing variable can never leave an instance stuck with an incident.
+His "No" conditions were turned into default flows, so a missing variable can never leave an instance stuck with an incident.
+
+The forms use text choices, which are reliable in Camunda Forms, and an output mapping turns each one into Zain's true/false variable:
+- **Rejected-claim form:** `rejectedClaimDecision = "remove-claim"` → `removeOrganicClaim`.
+- **Manual decision form:** `manualReviewDecision = "approve"` → `manualCertificationVerified`.
+- **Certification message:** `certificationStatus = "verified"` → `certificationVerified`.
 
 ## 3. Variables
 
@@ -70,17 +80,20 @@ Every gateway has a default flow, so a missing variable can never leave an insta
 | `validationErrors` | list of strings | Validation sub-process | Correction form |
 | `productDetailsValid` | boolean | Validation sub-process | Routing |
 | `listingId` | string `LST-…` | Validation sub-process (first run) | Message correlation, records |
-| `certificationStatus` | `verified` / `rejected` | Certification service message | Routing |
+| `certificationStatus` | `verified` / `rejected` | Certification service message | Audit |
+| `certificationVerified` | boolean | Mapped from `certificationStatus` | Routing |
 | `certificationAttempts` | integer | "Record certification timeout" | Retry limit (3) |
 | `organicStatus` | string | Record / flag tasks | Catalogue entry |
-| `rejectedClaimDecision` | `remove-claim` / `withhold` | Rejected-claim form | Routing |
+| `rejectedClaimDecision` | `remove-claim` / `withhold` | Rejected-claim form | Audit |
+| `removeOrganicClaim` | boolean | Mapped from `rejectedClaimDecision` | Routing |
 | `certificateDocumentSeen`, `evidenceReviewNotes` | boolean, string | Evidence review form | Audit evidence |
 | `producerNameMatchesCertificate`, `certificateInDate` | boolean | Producer check form | Audit evidence |
-| `manualReviewDecision`, `manualReviewNotes` | `approve` / `reject`, string | Manual review decision form | Routing, audit evidence |
+| `manualReviewDecision`, `manualReviewNotes` | `approve` / `reject`, string | Manual review decision form | Audit evidence |
+| `manualCertificationVerified` | boolean | Mapped from `manualReviewDecision` | Routing |
 | `manualReviewOverdue` | boolean | "Flag manual review as overdue" | Escalation evidence |
 | `listingStatus` | `Pending manual review` / `Withheld` / `Published` | Flag, withhold, publish tasks | Outcome |
 | `product`, `catalogueEntry` | object | Prepare / save tasks | Simulated catalogue |
-| `traceabilityRecord` | object | `record-product-traceability` | Simulated traceability store (E1-07) |
+| `traceabilityRecord` | object | `record_product_traceability` | Simulated traceability store (E1-07) |
 | `producerNotifications` | list of objects | Notify tasks | Simulated notifications (E1-08) |
 
 ## 4. Forms

@@ -137,6 +137,7 @@ class ProductListingProcessTest {
     assertThat(instance).isCompleted()
         .hasPassedElement("Task_RecordVerified")
         .hasPassedElement("End_Published")
+        .hasVariableWithValue("certificationVerified", true)
         .hasVariableWithValue("organicStatus", "Verified organic");
     assertThat(this.<Map<String, Object>>variable(instance, "product")).containsEntry("organic", true);
     assertThat(this.<Map<String, Object>>variable(instance, "traceabilityRecord")).containsEntry("certificationReference", "GB-ORG-05");
@@ -156,6 +157,8 @@ class ProductListingProcessTest {
     assertThat(instance).isCompleted()
         .hasPassedElement("Task_RemoveClaim")
         .hasPassedElement("End_Published")
+        .hasVariableWithValue("certificationVerified", false)
+        .hasVariableWithValue("removeOrganicClaim", true)
         .hasVariableWithValue("organicClaimMade", false);
     assertThat(this.<Map<String, Object>>variable(instance, "product"))
         .containsEntry("organic", false).containsEntry("organicStatus", "Not organic");
@@ -191,6 +194,7 @@ class ProductListingProcessTest {
         .hasPassedElement("Task_RecordManualVerified")
         .hasPassedElement("End_Published")
         .hasNotPassedElement("Task_FlagOverdue")
+        .hasVariableWithValue("manualCertificationVerified", true)
         .hasVariableWithValue("organicStatus", "Verified organic (manual review)")
         .hasVariableWithValue("listingStatus", "Published");
   }
@@ -355,6 +359,6 @@ class ProductListingProcessTest {
    * zeebe:userTask marker. The deployed files in camunda/ keep Camunda user tasks for Tasklist.
    */
   private static byte[] withJobBasedUserTasks(String file) throws IOException {
-    return Files.readString(CAMUNDA.resolve(file)).replace("<zeebe:userTask />", "").getBytes(StandardCharsets.UTF_8);
+    return Files.readString(CAMUNDA.resolve(file)).replaceAll("<zeebe:userTask\\s*/>", "").getBytes(StandardCharsets.UTF_8);
   }
 }
