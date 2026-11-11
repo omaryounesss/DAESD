@@ -1,0 +1,52 @@
+{
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.6.0",
+  "exporter": {
+    "name": "Camunda Modeler",
+    "version": "5.30.0"
+  },
+  "schemaVersion": 16,
+  "id": "manual-certification-review-form",
+  "type": "default",
+  "components": [
+    {
+      "id": "Field_044",
+      "type": "text",
+      "text": "## Record manual review decision\n**Product:** {{productName}} ({{category}})  \n**Producer:** {{producerName}}  \n**Origin:** {{origin}}  \n**Certification reference:** {{certificationReference}}  \n**Listing:** {{listingId}}  \n**Evidence notes:** {{evidenceReviewNotes}}"
+    },
+    {
+      "id": "Field_045",
+      "type": "radio",
+      "key": "manualReviewDecision",
+      "label": "Is the organic evidence verified?",
+      "validate": {
+        "required": true
+      },
+      "values": [
+        {
+          "label": "Verified: publish as organic",
+          "value": "approve"
+        },
+        {
+          "label": "Not verified: withhold the listing",
+          "value": "reject"
+        }
+      ]
+    },
+    {
+      "id": "Field_046",
+      "type": "textarea",
+      "key": "manualReviewNotes",
+      "label": "Reason for decision",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "id": "Field_047",
+      "type": "button",
+      "label": "Record decision",
+      "action": "submit"
+    }
+  ]
+}

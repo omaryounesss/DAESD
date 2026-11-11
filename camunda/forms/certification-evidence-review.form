@@ -1,0 +1,39 @@
+{
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.6.0",
+  "exporter": {
+    "name": "Camunda Modeler",
+    "version": "5.30.0"
+  },
+  "schemaVersion": 16,
+  "id": "certification-evidence-review-form",
+  "type": "default",
+  "components": [
+    {
+      "id": "Field_036",
+      "type": "text",
+      "text": "## Review submitted certification evidence\nThe certification service did not respond after {{certificationAttempts}} attempts, so this claim needs a manual check.\n\n**Product:** {{productName}} ({{category}})  \n**Producer:** {{producerName}}  \n**Origin:** {{origin}}  \n**Certification reference:** {{certificationReference}}  \n**Listing:** {{listingId}}"
+    },
+    {
+      "id": "Field_037",
+      "type": "checkbox",
+      "key": "certificateDocumentSeen",
+      "label": "Certificate document has been seen"
+    },
+    {
+      "id": "Field_038",
+      "type": "textarea",
+      "key": "evidenceReviewNotes",
+      "label": "Evidence notes",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "id": "Field_039",
+      "type": "button",
+      "label": "Continue",
+      "action": "submit"
+    }
+  ]
+}
