@@ -6,7 +6,7 @@
 | **Use case** | Use Case 1 – Producer Product Listing and Inventory Management |
 | **Backlog item** | E3-06 (lead: Omar Younes, with Mohamed Alabweh and Zaineldin Sharaf) |
 | **Sprint** | 2 |
-| **Status** | Draft. The i\* column is complete (Mohamed Alabweh). The strategic BPMN column has been checked against `strategic-marketplace.bpmn` (Omar Younes, see section 5). The operational BPMN names for Functionality 1 have been confirmed against the completed model (Zaineldin Sharaf, M3); Functionality 2 is pending. The Camunda column for Functionality 1 has been confirmed against the executable process (Omar Abdelaaty, M4, see section 5); the Functionality 2 Camunda column is still planned. |
+| **Status** | Draft. The i\* column is complete (Mohamed Alabweh). The strategic BPMN column has been checked against `strategic-marketplace.bpmn` (Omar Younes, see section 5). The operational BPMN names for Functionality 1 have been confirmed against the completed model (Zaineldin Sharaf, M3); Functionality 2 operational BPMN design is completed and mapped (Zaineldin Sharaf, M3). The Camunda column for Functionality 1 has been confirmed against the executable process (Omar Abdelaaty, M4, see section 5); the Functionality 2 Camunda column is still planned. |
 | **Related artefacts** | [case-study-analysis.md](case-study-analysis.md) · [selected-functionalities.md](selected-functionalities.md) · [i\* models](../models/i-star/) · [strategic BPMN](../models/strategic-bpmn/) · [opertional BPMN models](../models/operational-bpmn/)|
 
 ---
@@ -40,15 +40,16 @@ The brief asks for a clear progression: **i\* SD/SR → strategic BPMN → opera
 | 1.7 | Tension: waiting for an unavailable service protects trust but delays sales (§3.4) | SR task **Request manual review** (helps *Trustworthy organic labelling*, hurts *Fast listing*); SD/SR dependency *Flag unverified listings for review* (Administrator) | Inside *Manage product listings* (no separate strategic element; the manual review is operational detail, carried out by a role from the *Marketplace Administrator* lane) | **Certification response timeout** → retry gateway → subprocess **Manually review certification**; boundary timer **Manual review deadline exceeded** | Timer **Certification response timeout** (30 s) → **Record certification timeout** (`certificationAttempts`) → **Retry attempts remaining?** (fewer than 3) → sub-process **Manually review certification** (three Administrator user tasks with Forms) → **Organic evidence verified?** (`manualCertificationVerified`); non-interrupting boundary timer **Manual review deadline exceeded** (24 h) → **Flag manual review as overdue** | BR-03 |
 | 1.8 | Product stored for customers and traceability | SR task **Save product to catalogue**, resource **Product catalogue** | Data stores *Product catalogue* and *Traceability records* | **Save product to catalogue** → **Record product traceability** → **Publish product listing**; catalogue and traceability data stores | **Save product to catalogue** (`catalogueEntry`) → call activity **Record product traceability** (process `record_product_traceability`, producing `traceabilityRecord` with origin, harvest, best-before, allergens and certification) → **Publish product listing** (`listingStatus` = Published) | BR-01, BR-10 |
 
+
 ## 4. Functionality 2: Inventory and seasonal availability management
 
-| # | Need (analysis) | i\* (SD / SR) | Strategic BPMN | Operational BPMN (planned) | Camunda (planned) | Rule |
+| # | Need (analysis) | i\* (SD / SR) | Strategic BPMN | Operational BPMN (design completed) | Camunda (planned) | Rule |
 |---|---|---|---|---|---|---|
-| 2.1 | Customers must only see products they can buy | SR goal **Availability kept accurate**, achieved by task **Update availability automatically** | Sub-process *Manage inventory and availability*; end event *Stock status updated* | Process **Inventory and seasonal availability**; end event *Stock status updated* | Executable inventory process | BR-04, BR-05 |
-| 2.2 | Platform depends on Producer for *Up-to-date stock and season data* (§3.3) | SD/SR dependency *Up-to-date stock and season data*; SR goal **Stock kept accurate** (Producer); task **Read stock and season updates** (Platform) | Message flow *Stock and season update*; start event *Stock or season update received* | User task **Update stock and season** (Producer lane) | Camunda Form *Stock and season update* (quantity, season start, season end) | BR-04, BR-05 |
-| 2.3 | Tension: producers also sell offline, so stock drifts (§3.4) | SR task **Make unavailable at zero stock** (helps *Accurate availability*); Producer trade-off *Update after each sale* vs *Update stock weekly* | Inside *Manage inventory and availability* | Gateway *Stock at zero?* → service task **Make unavailable at zero stock** | Gateway condition on the quantity variable | BR-04 |
-| 2.4 | Restocked products only sold in season | SR task **Check season dates** (helps *Accurate availability*) | Inside *Manage inventory and availability* | Gateway *Within season?*; timer events at season start and end (agreed F2 addition) | Gateway condition on season dates; timer events | BR-05 |
-| 2.5 | A paid order reduces stock (analysis §6, link 2) | Pending G1: *Order paid – reduce stock* to be added to the SR model | Data association *Process orders and payments* → *Product catalogue* (added under G2); Task 2 integration point | Message start event **Order paid – reduce stock** (backlog E2-07) | Message start event correlating product ID and quantity sold | BR-04 |
+| 2.1 | Customers must only see products they can buy | SR goal **Availability kept accurate**, achieved by task **Update availability automatically** | Sub-process *Manage inventory and availability*; end event *Stock status updated* | Process **Inventory and seasonal availability management**; gateway **Update valid?**; stock and season availability checks; end event **Stock status updated** | Executable inventory process | BR-04, BR-05 |
+| 2.2 | Platform depends on Producer for *Up-to-date stock and season data* (§3.3) | SD/SR dependency *Up-to-date stock and season data*; SR goal **Stock kept accurate** (Producer); task **Read stock and season updates** (Platform) | Message flow *Stock and season update*; start event *Stock or season update received* | Producer message flow → message start event **Stock or season update received** → expanded subprocess **Validate stock and season update** (stock quantity and seasonal date validation) → gateway **Update valid?**; valid updates proceed to **Save updated stock and season dates** | Camunda Form *Stock and season update* (quantity, season start, season end) | BR-04, BR-05 |
+| 2.3 | Tension: producers also sell offline, so stock drifts (§3.4) | SR task **Make unavailable at zero stock** (helps *Accurate availability*); Producer trade-off *Update after each sale* vs *Update stock weekly* | Inside *Manage inventory and availability* | Gateway **Stock at zero?** → service task **Make unavailable at zero stock** → send task **Send out-of-stock notification**; non-zero stock proceeds to seasonal availability checks | Gateway condition on the quantity variable | BR-04 |
+| 2.4 | Restocked products only sold in season | SR task **Check season dates** (helps *Accurate availability*) | Inside *Manage inventory and availability* | Gateway **Within season?** → **Make product available** or **Make unavailable outside season**; timer start events **Season start reached** and **Season end reached** automatically update availability; season-start workflow calls **Check product stock status** | Gateway condition on season dates; timer events | BR-05 |
+| 2.5 | A paid order reduces stock (analysis §6, link 2) | Pending G1: *Order paid – reduce stock* to be added to the SR model | Data association *Process orders and payments* → *Product catalogue* (added under G2); Task 2 integration point | Message start event **Order paid – reduce stock** (E2-07) → **Reduce stock by purchased quantity** → stock and seasonal availability checks → low-stock/out-of-stock notifications where applicable → **Save updated stock and availability** → end event **Stock reduced and availability updated** | Message start event correlating product ID and quantity sold | BR-04 |
 
 ## 5. Gaps to close
 
@@ -58,9 +59,11 @@ Checking the levels against each other found these gaps. Each has an owner and a
 |---|---|---|---|---|---|
 | G1 | The agreed F2 additions (low-stock alert via the notification service, rejected stock updates, "order paid – reduce stock" message start) are not yet in the i\* SR model. | i\* SR | Add a task *Send low-stock alert* depending on the Notification service, a task *Reject invalid update* to the Platform, and *Order paid – reduce stock* (row 2.5). | Mohamed Alabweh | Open |
 | G2 | In the strategic BPMN, *Process orders and payments* only read the *Product catalogue*; nothing showed a paid order reducing stock. | Strategic BPMN | Added a write data association from *Process orders and payments* to *Product catalogue*, and recorded it as the Task 2 integration point (row 2.5). | Omar Younes | Done |
-| G3 | Operational task names are planned, not built. | Operational BPMN | Use the names in sections 3 and 4, or report changes so i\* can match. | Zaineldin Sharaf | Partially complete — F1 model built and mapped; F2 pending. |
+| G3 | Operational task names are planned, not built. | Operational BPMN | Use the names in sections 3 and 4, or report changes so i\* can match. | Zaineldin Sharaf | Done — F1 and F2 operational BPMN models completed and mapped to sections 3 and 4. |
 | G4 | Camunda element names and variables are planned, not built. | Camunda | Use the names in sections 3 and 4 for tasks, Forms and variables. | Omar Abdelaaty | Partially complete — F1 built and mapped (section 3); F2 pending. |
 | G5 | The certification-service fallback was worded differently in two documents ("retry, then administrator" vs "manual review or listing without the organic claim"). | Analysis / functionalities | Agreed fallback: **timed retry; if the service remains unavailable, escalate to the Administrator through the subprocess *Manually review certification***. The product is never published as organic without verification. Both documents use the agreed fallback approach. | Omar Younes, Zaineldin Sharaf | Agreed |
+
+#
 
 ### Strategic BPMN check (Omar Younes)
 
@@ -74,10 +77,13 @@ Every strategic BPMN element named in sections 3 and 4 was checked against `stra
 One correction was made. Row 1.7 previously pointed to the Administrator lane, but the strategic model has no review element there, so the row now states that manual review is operational detail inside *Manage product listings*.
 
 
+#
 
 ### Operational BPMN check (Zaineldin Sharaf)
 
-Functionality 1 has been completed and its elements mapped to Section 3. The operational BPMN expands the strategic sub-process *Manage product listings*.
+Functionality 1 and Functionality 2 have been completed and their elements mapped to Sections 3 and 4. The operational BPMN models expand the strategic sub-processes *Manage product listings* and *Manage inventory and availability*.
+
+**Functionality 1 — Product listing, validation and publication**
 
 - **Process:** *Product listing, validation and publication*
 - **Participants:** Producer, Marketplace Platform, Marketplace Administrator, Organic Certification Service
@@ -90,9 +96,27 @@ The operational model adds detailed validation, certification retries, manual re
 
 One naming difference was resolved: row 1.7 originally referenced *Review unverified listing*, which is represented by the expanded sub-process *Manually review certification*.
 
-**Status:** Functionality 1 design completed and mapped. Functionality 2 pending.
+**Functionality 2 — Inventory and seasonal availability management**
+
+- **Process:** *Inventory and seasonal availability management*
+- **Participants:** Producer, Marketplace Platform, Marketplace Administrator, Notification Service, Payment Provider
+- **Sub-process:** *Validate stock and season update*
+- **Reusable process:** *check_product_stock_status*, referenced through the call activity *Check product stock status*
+- **Key gateways:** *Update valid?*, *Correction attempts exceeded?*, *Allow another correction?*, *Stock at zero?*, *Within season?*, *Low stock?*, *Stock available?*
+- **Events:** *Stock or season update received*, *Corrected stock update received*, *Review deadline exceeded*, *Season start reached*, *Season end reached*, *Order paid – reduce stock*
+- **Data store:** *Product Catalogue*
+- **Exception handling:** Invalid stock updates, correction attempts, administrative review, 48-hour review timeout, low-stock and out-of-stock notifications
+- **Seasonal automation:** Timer-triggered season-start and season-end workflows automatically update product availability
+- **Order integration:** Message-triggered stock reduction following a successful order, without modelling the ordering or payment process itself
+
+The operational model expands the strategic sub-process *Manage inventory and availability* with validation, correction loops, exception handling, automatic seasonal changes, stock notifications and the ordering integration point.
+
+The reusable stock-checking process is documented separately in `models/operational-bpmn/functionality-2/check-product-stock-status.bpmn`.
+
+**Status:** Functionality 1 and Functionality 2 operational BPMN designs completed and mapped. Executable Camunda implementation remains a separate group activity.
 
 
+#
 
 ### Camunda check (Omar Abdelaaty)
 
