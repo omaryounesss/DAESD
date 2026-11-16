@@ -37,7 +37,7 @@ In iStar 2.0, softgoals are called **qualities** (cloud shapes).
 **Platform.** Two top-level goals, one per functionality:
 
 - **Product published** (Functionality 1) is achieved by *Process product listing*, which needs all of: *Validate product details*, *Organic claim verified* and *Save product to catalogue*.
-- **Availability kept accurate** (Functionality 2) is achieved by *Update availability automatically*, which reads stock and season updates, makes products unavailable at zero stock, and checks season dates.
+- **Availability kept accurate** (Functionality 2) is achieved by *Update availability automatically*, which reads stock and season updates, makes products unavailable at zero stock, checks season dates, reduces stock by the purchased quantity when an order is paid, sends a low-stock notification (depending on the Notification service), and rejects invalid stock updates. All of these help *Accurate availability*. The last three were added to match the agreed Functionality 2 additions in the operational BPMN (traceability gap G1).
 
 **Producer.** The goal **Products sold through marketplace** is achieved by selling through the marketplace: submitting product details and keeping stock accurate.
 
@@ -62,3 +62,5 @@ The SR goals and tasks match the strategic BPMN and will match the operational B
 | *Availability kept accurate* / *Update availability automatically* | Manage inventory and availability |
 | *Check with certification service* | Message flows to the Organic Certification Service |
 | *Request manual review* | Administrator lane |
+| *Reduce stock by purchased quantity* | Data association *Process orders and payments* → *Product catalogue* (Task 2 integration point) |
+| *Send low-stock notification* | Message flows to the Notification Service |
