@@ -1,0 +1,36 @@
+{
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.6.0",
+  "exporter": {
+    "name": "Camunda Modeler",
+    "version": "5.30.0"
+  },
+  "schemaVersion": 16,
+  "id": "producer-certification-check-form",
+  "type": "default",
+  "components": [
+    {
+      "id": "Field_040",
+      "type": "text",
+      "text": "## Check producer and certification details\n**Product:** {{productName}} ({{category}})  \n**Producer:** {{producerName}}  \n**Origin:** {{origin}}  \n**Certification reference:** {{certificationReference}}  \n**Listing:** {{listingId}}"
+    },
+    {
+      "id": "Field_041",
+      "type": "checkbox",
+      "key": "producerNameMatchesCertificate",
+      "label": "Producer name matches the certificate"
+    },
+    {
+      "id": "Field_042",
+      "type": "checkbox",
+      "key": "certificateInDate",
+      "label": "Certificate is in date and covers this product"
+    },
+    {
+      "id": "Field_043",
+      "type": "button",
+      "label": "Continue",
+      "action": "submit"
+    }
+  ]
+}

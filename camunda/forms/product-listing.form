@@ -1,0 +1,195 @@
+{
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.6.0",
+  "exporter": {
+    "name": "Camunda Modeler",
+    "version": "5.30.0"
+  },
+  "schemaVersion": 16,
+  "id": "product-listing-form",
+  "type": "default",
+  "components": [
+    {
+      "id": "Field_001",
+      "type": "text",
+      "text": "## List a new product\nEnter the product, stock, season and traceability details."
+    },
+    {
+      "id": "Field_002",
+      "type": "textfield",
+      "key": "producerName",
+      "label": "Producer name",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "id": "Field_003",
+      "type": "textfield",
+      "key": "productName",
+      "label": "Product name",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "id": "Field_004",
+      "type": "textarea",
+      "key": "productDescription",
+      "label": "Description",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "id": "Field_005",
+      "type": "select",
+      "key": "category",
+      "label": "Category",
+      "validate": {
+        "required": true
+      },
+      "values": [
+        {
+          "label": "Vegetables",
+          "value": "Vegetables"
+        },
+        {
+          "label": "Fruit",
+          "value": "Fruit"
+        },
+        {
+          "label": "Dairy",
+          "value": "Dairy"
+        },
+        {
+          "label": "Eggs",
+          "value": "Eggs"
+        },
+        {
+          "label": "Meat",
+          "value": "Meat"
+        },
+        {
+          "label": "Bakery",
+          "value": "Bakery"
+        },
+        {
+          "label": "Preserves",
+          "value": "Preserves"
+        },
+        {
+          "label": "Other",
+          "value": "Other"
+        }
+      ]
+    },
+    {
+      "id": "Field_006",
+      "type": "number",
+      "key": "price",
+      "label": "Price (GBP)",
+      "validate": {
+        "required": true,
+        "min": 0.01
+      },
+      "decimalDigits": 2
+    },
+    {
+      "id": "Field_007",
+      "type": "number",
+      "key": "quantity",
+      "label": "Quantity in stock",
+      "validate": {
+        "required": true,
+        "min": 0
+      },
+      "decimalDigits": 0
+    },
+    {
+      "id": "Field_008",
+      "type": "datetime",
+      "subtype": "date",
+      "key": "availableFrom",
+      "dateLabel": "Available from (season start)",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "id": "Field_009",
+      "type": "datetime",
+      "subtype": "date",
+      "key": "availableUntil",
+      "dateLabel": "Available until (season end)",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "id": "Field_010",
+      "type": "textfield",
+      "key": "origin",
+      "label": "Farm origin",
+      "validate": {
+        "required": true
+      },
+      "description": "Farm name and location"
+    },
+    {
+      "id": "Field_011",
+      "type": "datetime",
+      "subtype": "date",
+      "key": "harvestDate",
+      "dateLabel": "Harvest date",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "id": "Field_012",
+      "type": "datetime",
+      "subtype": "date",
+      "key": "bestBeforeDate",
+      "dateLabel": "Best-before date",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "id": "Field_013",
+      "type": "textarea",
+      "key": "allergens",
+      "label": "Allergen information",
+      "validate": {
+        "required": true
+      },
+      "description": "List the 14 regulated allergens present, or write \"None\"."
+    },
+    {
+      "id": "Field_014",
+      "type": "checkbox",
+      "key": "organicClaimMade",
+      "label": "This product is certified organic"
+    },
+    {
+      "id": "Field_015",
+      "type": "textfield",
+      "key": "certificationReference",
+      "label": "Organic certification reference",
+      "validate": {
+        "required": false
+      },
+      "description": "UK control body code, e.g. GB-ORG-05",
+      "conditional": {
+        "hide": "=organicClaimMade != true"
+      }
+    },
+    {
+      "id": "Field_016",
+      "type": "button",
+      "label": "Submit listing",
+      "action": "submit"
+    }
+  ]
+}

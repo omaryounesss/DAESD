@@ -56,7 +56,8 @@ DAESD/
 
 ## Running the artefacts
 
-Setup instructions for the Camunda 8 processes and the certification service will be added in Sprint 2.
+- **Camunda processes and forms (F1):** see [camunda/README.md](camunda/README.md) for deployment, the demo script and the automated tests.
+- The certification service setup will be added with E4-01.
 
 ## Contribution
 
