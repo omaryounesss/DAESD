@@ -15,7 +15,6 @@
 
 The brief asks for a clear progression: **i\* SD/SR → strategic BPMN → operational BPMN → Camunda**. This table shows how each stakeholder need in our analysis is carried through every level, so any element can be traced back to why it exists and forward to where it is implemented.
 
-**Rule for the whole team:** use the **same names** at every level. Where an operational task or Camunda element is named below, please use that name (or tell Mohamed Alabweh so the i\* model can be updated to match).
 
 ## 2. How to read the tables
 
