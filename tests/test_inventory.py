@@ -46,17 +46,21 @@ class InventoryTests(unittest.TestCase):
         self.h('d','reduce-stock',orderId='O2',purchasedQuantity=2)
         self.h('e','notify-zero');self.h('f','notify-low')
         self.assertEqual(2,self.c.db.execute('SELECT count(*) FROM notifications').fetchone()[0])
-    def test_season_boundaries_inclusive_and_missed_end(self):
+    def test_season_boundaries_are_inclusive(self):
         for day,expected in [(date(2026,6,1),True),(date(2026,6,30),True),(date(2026,7,1),False)]:
             self.assertEqual(expected,self.c.handle(str(day),'retrieve-stock',{'productId':'P1'},day)['available'])
-        self.assertEqual(1,len(self.c.handle('scan','scan-end',{},date(2026,7,2))['dueProducts']))
+
     def test_stale_timer_cannot_enable_out_of_season_product(self):
         self.h('a','save-update',quantity=10,availableFrom='2026-07-01',availableUntil='2026-07-30')
-        self.assertFalse(self.h('b','available',seasonProduct={'productId':'P1','revision':1})['available'])
-    def test_correction_outbox_is_durable_and_deduplicated(self):
+        self.assertFalse(self.h('b','available')['available'])
+    def test_original_timer_route_uses_explicit_demo_product(self):
+        from unittest.mock import patch
+        with patch.dict(w.os.environ,{'F2_TIMER_PRODUCT_ID':'P1'}):
+            self.assertEqual('P1',self.c.handle('timer','retrieve-stock',{},self.day)['productId'])
+    def test_correction_request_is_recorded_once(self):
         self.h('a','request-correction',updateId='U1',validationErrors=['Invalid'])
         self.h('a','request-correction',updateId='U1')
-        self.assertEqual(1,self.c.db.execute('SELECT count(*) FROM outbox').fetchone()[0])
+        self.assertEqual(1,self.c.db.execute('SELECT count(*) FROM notifications').fetchone()[0])
     def test_invalid_save_is_defended(self):
         with self.assertRaises(ValueError):self.h('a','save-update',quantity=-1,availableFrom='2026-06-01',availableUntil='2026-06-30')
         self.assertEqual(10,self.c.get('P1')['quantity'])
@@ -69,8 +73,17 @@ class ModelTests(unittest.TestCase):
         new={e.get('id'):e for e in dst.iter() if e.get('id')}
         self.assertFalse(set(orig)-set(new))
         for key,e in orig.items():
-            if e.tag==B+'sequenceFlow' and key not in ('Flow_0ccb63r','Flow_1klohxp'):
+            if e.tag==B+'sequenceFlow':
                 self.assertEqual((e.get('sourceRef'),e.get('targetRef')),(new[key].get('sourceRef'),new[key].get('targetRef')))
+        added=set(new)-set(orig)
+        self.assertFalse([k for k in added if new[k].tag in (B+'task',B+'serviceTask',B+'startEvent',B+'endEvent',B+'subProcess',B+'sequenceFlow')])
+        for ident,e in orig.items():
+            if e.tag.endswith('BPMNDiagram'):
+                def signature(n):return (n.tag,tuple(sorted(n.attrib.items())),(n.text or '').strip(),tuple(signature(c) for c in n))
+                self.assertEqual(signature(e),signature(new[ident]))
+        def ownership(t):
+            return {c.get('id'):e.get('id') for e in t.iter() for c in e if c.get('id') in orig}
+        self.assertEqual(ownership(src),ownership(dst))
     def test_executable_contracts_and_all_gateway_routes(self):
         for path in (ROOT/'camunda/f2/processes').glob('*.bpmn'):
             root=E.parse(path)

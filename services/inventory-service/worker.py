@@ -16,7 +16,7 @@ import urllib.error
 
 KINDS = ('validate-quantity','validate-season','save-update','reduce-stock',
          'available','unavailable','notify-low','notify-zero','request-correction',
-         'send-correction','save-final','scan-start','scan-end','retrieve-stock')
+         'save-final','retrieve-stock')
 
 def integer(n):
     return isinstance(n,(int,float)) and not isinstance(n,bool) and n >= 0 and int(n)==n
@@ -81,24 +81,16 @@ class Catalogue:
             valid=not errors
             return {'validationErrors':errors,'updateValid':valid,
                     'correctionAttempts':v.get('correctionAttempts',0)+(0 if valid else 1)}
-        if kind.startswith('scan-'):
-            products=[json.loads(r[0]) for r in self.db.execute('SELECT body FROM products')]
-            # Reconcile all applicable products, including missed boundaries after downtime.
-            due=[{'productId':p['productId'],'revision':p['revision']} for p in products
-                 if (date.fromisoformat(p['availableFrom'])<=now<=date.fromisoformat(p['availableUntil'])
-                     if kind=='scan-start' else now>date.fromisoformat(p['availableUntil']))]
-            return {'dueProducts':due}
-        if kind in ('request-correction','send-correction'):
+        if kind=='request-correction':
             if not v.get('updateId'):raise ValueError('updateId is required')
-            name='f2-correction-requested' if kind=='request-correction' else 'f2-stock-corrected'
-            body={'name':name,'correlationKey':str(v['updateId']),
-                  'messageId':'f2-'+key,'timeToLive':604800000,
-                  'variables':{k:val for k,val in v.items() if k in (
-                      'productId','updateId','quantity','availableFrom','availableUntil',
-                      'validationErrors','correctionAttempts')}}
-            self.db.execute('INSERT OR IGNORE INTO outbox(id,body) VALUES (?,?)',(key,json.dumps(body)))
+            self.db.execute('INSERT OR IGNORE INTO notifications VALUES (?,?)',
+                (key,json.dumps({'type':'correction-requested','productId':v.get('productId'),
+                 'updateId':v['updateId'],'validationErrors':v.get('validationErrors',[])})))
             return {}
-        pid=(v.get('seasonProduct') or {}).get('productId',v.get('productId'))
+        pid=v.get('productId')
+        if not pid and kind in ('retrieve-stock','unavailable'):
+            pid=os.environ.get('F2_TIMER_PRODUCT_ID')
+            if not pid:raise ValueError('Set F2_TIMER_PRODUCT_ID for original seasonal timer routes')
         p=self.get(pid)
         if kind=='save-update':
             # Recheck independently; a forged process flag cannot persist invalid data.
@@ -151,10 +143,6 @@ def run(catalogue):
                     key=job['jobKey']
                     try:
                         result=catalogue.handle(key,kind,job.get('variables',{}))
-                        # Publish durable correction messages before completing the request job.
-                        for oid,body in catalogue.db.execute('SELECT id,body FROM outbox WHERE sent=0').fetchall():
-                            request('/messages/publication',json.loads(body))
-                            with catalogue.db:catalogue.db.execute('UPDATE outbox SET sent=1 WHERE id=?',(oid,))
                         request(f'/jobs/{key}/completion',{'variables':result})
                     except Exception as exc:
                         print(f'F2 job {key} ({kind}): {exc}',flush=True)

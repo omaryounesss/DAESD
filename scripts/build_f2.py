@@ -79,53 +79,19 @@ review=nodes['Activity_07qa1zf'];add(ext(review),'formDefinition',{'formId':'f2-
 add(nodes['TimerEventDefinition_01m6b8r'],'timeDuration',{},'PT48H')
 called=nodes['Activity_052zj9p'].find('.//{'+Z+'}calledElement');called.set('processId','check_product_stock_status');called.set('propagateAllChildVariables','true')
 
-# Timer starts cannot use a product variable: no product instance exists yet.
-# Each timer scans the catalogue, then runs Zain's original route once per due product.
-plane=root.find('.//{'+D+'}BPMNPlane')
-for label,start,first,end,ids,flowids,y in [
-('start','Event_0ii4tpz','Activity_052zj9p','Event_0eb6t8d',
- ['Activity_052zj9p','Gateway_0kucjyc','Activity_1aqxzi0','Activity_048h4bm','Gateway_18mlopo','Event_0eb6t8d'],
- ['Flow_0ccb63r','Flow_0qn1zef','Flow_0ishmbg','Flow_091vx6a','Flow_19nxo7i','Flow_11uqjse','Flow_1vhcup5'],820),
-('end','Event_0g3ep4s','Activity_1xtvtom','Event_0s09mrn',
- ['Activity_1xtvtom','Event_0s09mrn'],['Flow_1klohxp','Flow_1drh37y'],1070)]:
-    add(nodes[start].find(tag('timerEventDefinition')),'timeCycle',{},'R/PT1M')
-    scanid='F2_Scan_'+label;subid='F2_Each_'+label;sid='F2_Start_'+label;eid='F2_End_'+label
-    scan=add(p,'serviceTask',{'id':scanid,'name':'Find products due for season '+label});job(scan,'scan-'+label)
-    sub=add(p,'subProcess',{'id':subid,'name':'Apply season '+label+' to each due product'})
-    loop=add(sub,'multiInstanceLoopCharacteristics',{'isSequential':'true'})
-    add(add(loop,'extensionElements'),'loopCharacteristics',{'inputCollection':'=dueProducts','inputElement':'seasonProduct'},ns=Z)
-    s=add(sub,'startEvent',{'id':sid,'name':'Product season '+label+' check'});add(s,'outgoing',{},flowids[0])
-    for nid in ids+flowids:
-        e=nodes[nid];p.remove(e);sub.append(e)
-    nodes[flowids[0]].set('sourceRef',sid)
-    nodes[start].find(tag('outgoing')).text='F2_ToScan_'+label
-    add(p,'sequenceFlow',{'id':'F2_ToScan_'+label,'sourceRef':start,'targetRef':scanid})
-    add(p,'sequenceFlow',{'id':'F2_ToEach_'+label,'sourceRef':scanid,'targetRef':subid})
-    add(p,'sequenceFlow',{'id':'F2_Done_'+label,'sourceRef':subid,'targetRef':eid})
-    add(p,'endEvent',{'id':eid,'name':'Season '+label+' catalogue check complete'})
-    # Retain original route drawing and surround it with the added batch scope.
-    for drawing in list(plane):
-        if drawing.get('bpmnElement') in ids+flowids:
-            for point in drawing.iter():
-                if point.get('x') is not None:point.set('x',str(float(point.get('x'))+450))
-    shape=add(plane,'BPMNShape',{'id':subid+'_di','bpmnElement':subid,'isExpanded':'true'},ns=D)
-    add(shape,'Bounds',{'x':'680','y':str(y-25),'width':'750','height':'210'},ns=C)
-    for nid,x,yy,w,h in [(sid,710,y+22,36,36),(scanid,440,y,100,80),(eid,1500,y+22,36,36)]:
-        shape=add(plane,'BPMNShape',{'id':nid+'_di','bpmnElement':nid},ns=D);add(shape,'Bounds',{'x':str(x),'y':str(yy),'width':str(w),'height':str(h)},ns=C)
-    # Lane membership only lists nodes directly owned by the process.
-    lane=p.find('.//'+tag('lane'))
-    for ref in list(lane):
-        if ref.tag==tag('flowNodeRef') and ref.text in ids:lane.remove(ref)
-    for nid in [scanid,subid,eid]:add(lane,'flowNodeRef',{},nid)
-    for fid,points in [('F2_ToScan_'+label,[(278,y+40),(440,y+40)]),('F2_ToEach_'+label,[(540,y+40),(680,y+40)]),('F2_Done_'+label,[(1430,y+40),(1500,y+40)])]:
-        edge=add(plane,'BPMNEdge',{'id':fid+'_di','bpmnElement':fid},ns=D)
-        for x,yy in points:add(edge,'waypoint',{'x':str(x),'y':str(yy)},ns=I)
-for shape in plane:
-    if shape.get('bpmnElement')=='DataStoreReference_0as5i3t':
-        bounds=shape.find('{'+C+'}Bounds');bounds.set('x','1700');bounds.set('y','1000')
+# Keep Zain's exact timer starts and routes. A timer start has no product
+# variables: this demonstration binds the two starts to one configured product.
+# No scanner, wrapper subprocess, helper process or diagram movement is added.
+demo=json.loads((ROOT/'services/inventory-service/demo-product.json').read_text())
+from datetime import date, timedelta
+add(nodes['TimerEventDefinition_0k570q7'],'timeDate',{},demo['availableFrom']+'T00:00:00Z')
+add(nodes['TimerEventDefinition_0m3fr1e'],'timeDate',{},str(date.fromisoformat(demo['availableUntil'])+timedelta(days=1))+'T00:00:00Z')
+root.set('{http://camunda.org/schema/modeler/1.0}executionPlatformVersion','8.9.0')
 write(tree,'camunda/f2/processes/inventory-seasonal-availability.bpmn')
-
-t=E.parse(SOURCE/'check-product-stock-status.bpmn');job(t.getroot().find('.//'+tag('serviceTask')),'retrieve-stock');write(t,'camunda/f2/processes/check-product-stock-status.bpmn')
+t=E.parse(SOURCE/'check-product-stock-status.bpmn')
+t.getroot().set('{http://camunda.org/schema/modeler/1.0}executionPlatformVersion','8.9.0')
+job(t.getroot().find('.//'+tag('serviceTask')),'retrieve-stock')
+write(t,'camunda/f2/processes/check-product-stock-status.bpmn')
 
 def form(fid,title,fields):
     components=[{'type':'text','text':'# '+title,'id':'heading'}]+fields
@@ -141,21 +107,4 @@ form('f2-stock-correction','Correct stock and season update',[
  {'type':'textfield','key':'availableFrom','label':'Season start (YYYY-MM-DD)','id':'from','validate':{'required':True}},
  {'type':'textfield','key':'availableUntil','label':'Season end (YYYY-MM-DD, inclusive)','id':'until','validate':{'required':True}}])
 
-# Small producer-side adapter supplies a Tasklist form without replacing the
-# message catch in the original marketplace operational model.
-r=E.Element(tag('definitions'),{'id':'F2_Correction_Definitions','targetNamespace':'https://uwe.ac.uk/daesd/f2','{http://camunda.org/schema/modeler/1.0}executionPlatform':'Camunda Cloud','{http://camunda.org/schema/modeler/1.0}executionPlatformVersion':'8.9.0'})
-pr=add(r,'process',{'id':'f2-producer-correction','name':'F2 Producer correction form','isExecutable':'true'})
-add(r,'message',{'id':'CorrectionRequested','name':'f2-correction-requested'})
-s=add(pr,'startEvent',{'id':'CorrectionStart','name':'Correction requested'});add(s,'messageEventDefinition',{'messageRef':'CorrectionRequested'})
-u=add(pr,'userTask',{'id':'F2_CorrectStock','name':'Submit corrected stock and season update'});add(ext(u),'userTask',ns=Z);add(ext(u),'formDefinition',{'formId':'f2-stock-correction','bindingType':'latest'},ns=Z)
-send=add(pr,'sendTask',{'id':'F2_SendCorrection','name':'Return corrected stock update'});job(send,'send-correction')
-add(pr,'endEvent',{'id':'CorrectionEnd','name':'Correction returned'})
-for i,(a,b) in enumerate([('CorrectionStart','F2_CorrectStock'),('F2_CorrectStock','F2_SendCorrection'),('F2_SendCorrection','CorrectionEnd')]):add(pr,'sequenceFlow',{'id':f'CorrectionFlow{i}','sourceRef':a,'targetRef':b})
-diag=add(r,'BPMNDiagram',{'id':'CorrectionDiagram'},ns=D);pl=add(diag,'BPMNPlane',{'id':'CorrectionPlane','bpmnElement':'f2-producer-correction'},ns=D)
-for nid,x,w,h in [('CorrectionStart',100,36,36),('F2_CorrectStock',200,100,80),('F2_SendCorrection',360,100,80),('CorrectionEnd',520,36,36)]:
-    sh=add(pl,'BPMNShape',{'id':nid+'_di','bpmnElement':nid},ns=D);add(sh,'Bounds',{'x':str(x),'y':str(100 if h==80 else 122),'width':str(w),'height':str(h)},ns=C)
-for i,(x1,x2) in enumerate([(136,200),(300,360),(460,520)]):
-    edge=add(pl,'BPMNEdge',{'id':f'CorrectionFlow{i}_di','bpmnElement':f'CorrectionFlow{i}'},ns=D)
-    for x in [x1,x2]:add(edge,'waypoint',{'x':str(x),'y':'140'},ns=I)
-write(E.ElementTree(r),'camunda/f2/processes/producer-stock-correction.bpmn')
-print('Built three BPMN files and two forms from original F2 sources.')
+print('Built two BPMN files and two forms; original graph and diagram retained.')

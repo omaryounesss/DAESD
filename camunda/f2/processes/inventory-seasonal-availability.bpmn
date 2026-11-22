@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:modeler="http://camunda.org/schema/modeler/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Web Modeler" exporterVersion="64767e4" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.10.0">
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:modeler="http://camunda.org/schema/modeler/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Web Modeler" exporterVersion="64767e4" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.9.0">
   <bpmn:collaboration id="Collaboration_1b5cruk">
     <bpmn:participant id="Participant_09s0n6r" name="Producer" />
     <bpmn:participant id="Participant_041bi7k" name="Marketplace" processRef="Process_0g8kz9d" />
@@ -21,7 +21,14 @@
         <bpmn:flowNodeRef>Gateway_0jq1bif</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Gateway_158vgre</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Event_0ii4tpz</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_0kucjyc</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_1aqxzi0</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_048h4bm</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_18mlopo</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_0eb6t8d</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Event_0g3ep4s</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_1xtvtom</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_0s09mrn</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Activity_0u9a3lc</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Event_0k7qpmm</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Activity_0wf1ny8</bpmn:flowNodeRef>
@@ -48,17 +55,12 @@
         <bpmn:flowNodeRef>Event_12htmiz</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Event_0pab392</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Activity_0t8snic</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_052zj9p</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Gateway_06kd554</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Gateway_00mph7y</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Activity_07ct9ds</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Event_03jyftw</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Activity_0kb95hx</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>F2_Scan_start</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>F2_Each_start</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>F2_End_start</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>F2_Scan_end</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>F2_Each_end</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>F2_End_end</bpmn:flowNodeRef>
       </bpmn:lane>
       <bpmn:lane id="Lane_12fsm5f" name="Marketplace Administrator">
         <bpmn:flowNodeRef>Activity_07qa1zf</bpmn:flowNodeRef>
@@ -84,18 +86,61 @@
     </bpmn:exclusiveGateway>
     <bpmn:startEvent id="Event_0ii4tpz" name="Season start reached">
       <bpmn:documentation>Triggered when a product reaches its configured seasonal start date. The date is retrieved from the Product Catalogue. Availability is enabled only if the product has stock greater than zero.</bpmn:documentation>
-      <bpmn:outgoing>F2_ToScan_start</bpmn:outgoing>
+      <bpmn:outgoing>Flow_0ccb63r</bpmn:outgoing>
       <bpmn:timerEventDefinition id="TimerEventDefinition_0k570q7">
-        <bpmn:timeCycle>R/PT1M</bpmn:timeCycle>
+        <bpmn:timeDate>2026-11-01T00:00:00Z</bpmn:timeDate>
       </bpmn:timerEventDefinition>
     </bpmn:startEvent>
+    <bpmn:exclusiveGateway id="Gateway_0kucjyc" name="Stock available?" default="Flow_091vx6a">
+      <bpmn:incoming>Flow_0qn1zef</bpmn:incoming>
+      <bpmn:outgoing>Flow_0ishmbg</bpmn:outgoing>
+      <bpmn:outgoing>Flow_091vx6a</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Activity_1aqxzi0" name="Make product available at season start">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="f2-available" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0ishmbg</bpmn:incoming>
+      <bpmn:outgoing>Flow_19nxo7i</bpmn:outgoing>
+      <bpmn:dataOutputAssociation id="DataOutputAssociation_1k9720p">
+        <bpmn:targetRef>DataStoreReference_0as5i3t</bpmn:targetRef>
+      </bpmn:dataOutputAssociation>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Activity_048h4bm" name="Keep product unavailable">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="f2-unavailable" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_091vx6a</bpmn:incoming>
+      <bpmn:outgoing>Flow_11uqjse</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Gateway_18mlopo">
+      <bpmn:incoming>Flow_19nxo7i</bpmn:incoming>
+      <bpmn:incoming>Flow_11uqjse</bpmn:incoming>
+      <bpmn:outgoing>Flow_1vhcup5</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="Event_0eb6t8d" name="Season-start availability updated">
+      <bpmn:incoming>Flow_1vhcup5</bpmn:incoming>
+    </bpmn:endEvent>
     <bpmn:startEvent id="Event_0g3ep4s" name="Season end reached">
       <bpmn:documentation>Triggered when a product reaches its configured seasonal end date. The date is retrieved from the Product Catalogue. The product becomes unavailable regardless of its remaining stock quantity.</bpmn:documentation>
-      <bpmn:outgoing>F2_ToScan_end</bpmn:outgoing>
+      <bpmn:outgoing>Flow_1klohxp</bpmn:outgoing>
       <bpmn:timerEventDefinition id="TimerEventDefinition_0m3fr1e">
-        <bpmn:timeCycle>R/PT1M</bpmn:timeCycle>
+        <bpmn:timeDate>2027-01-01T00:00:00Z</bpmn:timeDate>
       </bpmn:timerEventDefinition>
     </bpmn:startEvent>
+    <bpmn:serviceTask id="Activity_1xtvtom" name="Make product unavailable at season end">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="f2-unavailable" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1klohxp</bpmn:incoming>
+      <bpmn:outgoing>Flow_1drh37y</bpmn:outgoing>
+      <bpmn:dataOutputAssociation id="DataOutputAssociation_1kdgntj">
+        <bpmn:targetRef>DataStoreReference_0as5i3t</bpmn:targetRef>
+      </bpmn:dataOutputAssociation>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="Event_0s09mrn" name="Season-end availability updated">
+      <bpmn:incoming>Flow_1drh37y</bpmn:incoming>
+    </bpmn:endEvent>
     <bpmn:subProcess id="Activity_0u9a3lc" name="Validate stock and season update">
       <bpmn:incoming>Flow_0m6cl3e</bpmn:incoming>
       <bpmn:outgoing>Flow_0rkijvl</bpmn:outgoing>
@@ -133,6 +178,17 @@
     <bpmn:sequenceFlow id="Flow_12vo3s4" sourceRef="Event_0pab392" targetRef="Gateway_158vgre" />
     <bpmn:sequenceFlow id="Flow_0m6cl3e" sourceRef="Gateway_158vgre" targetRef="Activity_0u9a3lc" />
     <bpmn:sequenceFlow id="Flow_1xsai26" sourceRef="Activity_0t8snic" targetRef="Gateway_0vqwqyu" />
+    <bpmn:sequenceFlow id="Flow_0ccb63r" sourceRef="Event_0ii4tpz" targetRef="Activity_052zj9p" />
+    <bpmn:sequenceFlow id="Flow_0qn1zef" sourceRef="Activity_052zj9p" targetRef="Gateway_0kucjyc" />
+    <bpmn:sequenceFlow id="Flow_0ishmbg" name="Yes" sourceRef="Gateway_0kucjyc" targetRef="Activity_1aqxzi0">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=quantity &gt; 0</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_091vx6a" name="No" sourceRef="Gateway_0kucjyc" targetRef="Activity_048h4bm" />
+    <bpmn:sequenceFlow id="Flow_19nxo7i" sourceRef="Activity_1aqxzi0" targetRef="Gateway_18mlopo" />
+    <bpmn:sequenceFlow id="Flow_11uqjse" sourceRef="Activity_048h4bm" targetRef="Gateway_18mlopo" />
+    <bpmn:sequenceFlow id="Flow_1vhcup5" sourceRef="Gateway_18mlopo" targetRef="Event_0eb6t8d" />
+    <bpmn:sequenceFlow id="Flow_1klohxp" sourceRef="Event_0g3ep4s" targetRef="Activity_1xtvtom" />
+    <bpmn:sequenceFlow id="Flow_1drh37y" sourceRef="Activity_1xtvtom" targetRef="Event_0s09mrn" />
     <bpmn:startEvent id="Event_0k7qpmm" name="Order paid - reduce stock">
       <bpmn:documentation>This branch represents how the inventory management process responds to a stock-reduction request following a successful order. It updates stock quantities, checks product availability and sends notifications where necessary. The ordering and payment processes themselves are outside the scope of this model.</bpmn:documentation>
       <bpmn:outgoing>Flow_0urmnr7</bpmn:outgoing>
@@ -364,6 +420,13 @@
       <bpmn:incoming>Flow_1bh3gve</bpmn:incoming>
     </bpmn:endEvent>
     <bpmn:sequenceFlow id="Flow_1bh3gve" sourceRef="Event_1xfog2v" targetRef="Event_1xmyihl" />
+    <bpmn:callActivity id="Activity_052zj9p" name="Check product stock status">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="check_product_stock_status" propagateAllChildVariables="true" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0ccb63r</bpmn:incoming>
+      <bpmn:outgoing>Flow_0qn1zef</bpmn:outgoing>
+    </bpmn:callActivity>
     <bpmn:exclusiveGateway id="Gateway_06kd554">
       <bpmn:incoming>Flow_1gkpf8k</bpmn:incoming>
       <bpmn:incoming>Flow_15js0qm</bpmn:incoming>
@@ -397,117 +460,6 @@
         <bpmn:targetRef>DataStoreReference_0as5i3t</bpmn:targetRef>
       </bpmn:dataOutputAssociation>
     </bpmn:serviceTask>
-    <bpmn:serviceTask id="F2_Scan_start" name="Find products due for season start">
-      <bpmn:extensionElements>
-        <zeebe:taskDefinition type="f2-scan-start" retries="3" />
-      </bpmn:extensionElements>
-      <bpmn:incoming>F2_ToScan_start</bpmn:incoming>
-      <bpmn:outgoing>F2_ToEach_start</bpmn:outgoing>
-    </bpmn:serviceTask>
-    <bpmn:subProcess id="F2_Each_start" name="Apply season start to each due product">
-      <bpmn:incoming>F2_ToEach_start</bpmn:incoming>
-      <bpmn:outgoing>F2_Done_start</bpmn:outgoing>
-      <bpmn:multiInstanceLoopCharacteristics isSequential="true">
-        <bpmn:extensionElements>
-          <zeebe:loopCharacteristics inputCollection="=dueProducts" inputElement="seasonProduct" />
-        </bpmn:extensionElements>
-      </bpmn:multiInstanceLoopCharacteristics>
-      <bpmn:startEvent id="F2_Start_start" name="Product season start check">
-        <bpmn:outgoing>Flow_0ccb63r</bpmn:outgoing>
-      </bpmn:startEvent>
-      <bpmn:callActivity id="Activity_052zj9p" name="Check product stock status">
-        <bpmn:extensionElements>
-          <zeebe:calledElement processId="check_product_stock_status" propagateAllChildVariables="true" />
-        </bpmn:extensionElements>
-        <bpmn:incoming>Flow_0ccb63r</bpmn:incoming>
-        <bpmn:outgoing>Flow_0qn1zef</bpmn:outgoing>
-      </bpmn:callActivity>
-      <bpmn:exclusiveGateway id="Gateway_0kucjyc" name="Stock available?" default="Flow_091vx6a">
-        <bpmn:incoming>Flow_0qn1zef</bpmn:incoming>
-        <bpmn:outgoing>Flow_0ishmbg</bpmn:outgoing>
-        <bpmn:outgoing>Flow_091vx6a</bpmn:outgoing>
-      </bpmn:exclusiveGateway>
-      <bpmn:serviceTask id="Activity_1aqxzi0" name="Make product available at season start">
-        <bpmn:extensionElements>
-          <zeebe:taskDefinition type="f2-available" retries="3" />
-        </bpmn:extensionElements>
-        <bpmn:incoming>Flow_0ishmbg</bpmn:incoming>
-        <bpmn:outgoing>Flow_19nxo7i</bpmn:outgoing>
-        <bpmn:dataOutputAssociation id="DataOutputAssociation_1k9720p">
-          <bpmn:targetRef>DataStoreReference_0as5i3t</bpmn:targetRef>
-        </bpmn:dataOutputAssociation>
-      </bpmn:serviceTask>
-      <bpmn:serviceTask id="Activity_048h4bm" name="Keep product unavailable">
-        <bpmn:extensionElements>
-          <zeebe:taskDefinition type="f2-unavailable" retries="3" />
-        </bpmn:extensionElements>
-        <bpmn:incoming>Flow_091vx6a</bpmn:incoming>
-        <bpmn:outgoing>Flow_11uqjse</bpmn:outgoing>
-      </bpmn:serviceTask>
-      <bpmn:exclusiveGateway id="Gateway_18mlopo">
-        <bpmn:incoming>Flow_19nxo7i</bpmn:incoming>
-        <bpmn:incoming>Flow_11uqjse</bpmn:incoming>
-        <bpmn:outgoing>Flow_1vhcup5</bpmn:outgoing>
-      </bpmn:exclusiveGateway>
-      <bpmn:endEvent id="Event_0eb6t8d" name="Season-start availability updated">
-        <bpmn:incoming>Flow_1vhcup5</bpmn:incoming>
-      </bpmn:endEvent>
-      <bpmn:sequenceFlow id="Flow_0ccb63r" sourceRef="F2_Start_start" targetRef="Activity_052zj9p" />
-      <bpmn:sequenceFlow id="Flow_0qn1zef" sourceRef="Activity_052zj9p" targetRef="Gateway_0kucjyc" />
-      <bpmn:sequenceFlow id="Flow_0ishmbg" name="Yes" sourceRef="Gateway_0kucjyc" targetRef="Activity_1aqxzi0">
-        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=quantity &gt; 0</bpmn:conditionExpression>
-      </bpmn:sequenceFlow>
-      <bpmn:sequenceFlow id="Flow_091vx6a" name="No" sourceRef="Gateway_0kucjyc" targetRef="Activity_048h4bm" />
-      <bpmn:sequenceFlow id="Flow_19nxo7i" sourceRef="Activity_1aqxzi0" targetRef="Gateway_18mlopo" />
-      <bpmn:sequenceFlow id="Flow_11uqjse" sourceRef="Activity_048h4bm" targetRef="Gateway_18mlopo" />
-      <bpmn:sequenceFlow id="Flow_1vhcup5" sourceRef="Gateway_18mlopo" targetRef="Event_0eb6t8d" />
-    </bpmn:subProcess>
-    <bpmn:sequenceFlow id="F2_ToScan_start" sourceRef="Event_0ii4tpz" targetRef="F2_Scan_start" />
-    <bpmn:sequenceFlow id="F2_ToEach_start" sourceRef="F2_Scan_start" targetRef="F2_Each_start" />
-    <bpmn:sequenceFlow id="F2_Done_start" sourceRef="F2_Each_start" targetRef="F2_End_start" />
-    <bpmn:endEvent id="F2_End_start" name="Season start catalogue check complete">
-      <bpmn:incoming>F2_Done_start</bpmn:incoming>
-    </bpmn:endEvent>
-    <bpmn:serviceTask id="F2_Scan_end" name="Find products due for season end">
-      <bpmn:extensionElements>
-        <zeebe:taskDefinition type="f2-scan-end" retries="3" />
-      </bpmn:extensionElements>
-      <bpmn:incoming>F2_ToScan_end</bpmn:incoming>
-      <bpmn:outgoing>F2_ToEach_end</bpmn:outgoing>
-    </bpmn:serviceTask>
-    <bpmn:subProcess id="F2_Each_end" name="Apply season end to each due product">
-      <bpmn:incoming>F2_ToEach_end</bpmn:incoming>
-      <bpmn:outgoing>F2_Done_end</bpmn:outgoing>
-      <bpmn:multiInstanceLoopCharacteristics isSequential="true">
-        <bpmn:extensionElements>
-          <zeebe:loopCharacteristics inputCollection="=dueProducts" inputElement="seasonProduct" />
-        </bpmn:extensionElements>
-      </bpmn:multiInstanceLoopCharacteristics>
-      <bpmn:startEvent id="F2_Start_end" name="Product season end check">
-        <bpmn:outgoing>Flow_1klohxp</bpmn:outgoing>
-      </bpmn:startEvent>
-      <bpmn:serviceTask id="Activity_1xtvtom" name="Make product unavailable at season end">
-        <bpmn:extensionElements>
-          <zeebe:taskDefinition type="f2-unavailable" retries="3" />
-        </bpmn:extensionElements>
-        <bpmn:incoming>Flow_1klohxp</bpmn:incoming>
-        <bpmn:outgoing>Flow_1drh37y</bpmn:outgoing>
-        <bpmn:dataOutputAssociation id="DataOutputAssociation_1kdgntj">
-          <bpmn:targetRef>DataStoreReference_0as5i3t</bpmn:targetRef>
-        </bpmn:dataOutputAssociation>
-      </bpmn:serviceTask>
-      <bpmn:endEvent id="Event_0s09mrn" name="Season-end availability updated">
-        <bpmn:incoming>Flow_1drh37y</bpmn:incoming>
-      </bpmn:endEvent>
-      <bpmn:sequenceFlow id="Flow_1klohxp" sourceRef="F2_Start_end" targetRef="Activity_1xtvtom" />
-      <bpmn:sequenceFlow id="Flow_1drh37y" sourceRef="Activity_1xtvtom" targetRef="Event_0s09mrn" />
-    </bpmn:subProcess>
-    <bpmn:sequenceFlow id="F2_ToScan_end" sourceRef="Event_0g3ep4s" targetRef="F2_Scan_end" />
-    <bpmn:sequenceFlow id="F2_ToEach_end" sourceRef="F2_Scan_end" targetRef="F2_Each_end" />
-    <bpmn:sequenceFlow id="F2_Done_end" sourceRef="F2_Each_end" targetRef="F2_End_end" />
-    <bpmn:endEvent id="F2_End_end" name="Season end catalogue check complete">
-      <bpmn:incoming>F2_Done_end</bpmn:incoming>
-    </bpmn:endEvent>
   </bpmn:process>
   <bpmn:message id="Message_Event_0yt42mz" name="f2-stock-update" />
   <bpmn:message id="Message_Event_0k7qpmm" name="f2-order-paid" />
@@ -556,25 +508,25 @@
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Gateway_0kucjyc_di" bpmnElement="Gateway_0kucjyc" isMarkerVisible="true">
-        <dc:Bounds x="935.0" y="835" width="50" height="50" />
+        <dc:Bounds x="485" y="835" width="50" height="50" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="919.0" y="811" width="81" height="14" />
+          <dc:Bounds x="469" y="811" width="81" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_1ndrlqn_di" bpmnElement="Activity_1aqxzi0">
-        <dc:Bounds x="1040.0" y="820" width="100" height="80" />
+        <dc:Bounds x="590" y="820" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_048h4bm_di" bpmnElement="Activity_048h4bm">
-        <dc:Bounds x="1040.0" y="920" width="100" height="80" />
+        <dc:Bounds x="590" y="920" width="100" height="80" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Gateway_18mlopo_di" bpmnElement="Gateway_18mlopo" isMarkerVisible="true">
-        <dc:Bounds x="1200.0" y="835" width="50" height="50" />
+        <dc:Bounds x="750" y="835" width="50" height="50" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_0eb6t8d_di" bpmnElement="Event_0eb6t8d">
-        <dc:Bounds x="1312.0" y="842" width="36" height="36" />
+        <dc:Bounds x="862" y="842" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1299.0" y="885" width="63" height="40" />
+          <dc:Bounds x="849" y="885" width="63" height="40" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_0zustlw_di" bpmnElement="Event_0g3ep4s">
@@ -584,12 +536,12 @@
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_0x65cws_di" bpmnElement="Activity_1xtvtom">
-        <dc:Bounds x="780.0" y="1070" width="100" height="80" />
+        <dc:Bounds x="330" y="1070" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_0s09mrn_di" bpmnElement="Event_0s09mrn">
-        <dc:Bounds x="932.0" y="1092" width="36" height="36" />
+        <dc:Bounds x="482" y="1092" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="906.0" y="1135" width="90" height="40" />
+          <dc:Bounds x="456" y="1135" width="90" height="40" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Gateway_06kd554_di" bpmnElement="Gateway_06kd554" isMarkerVisible="true">
@@ -698,7 +650,7 @@
         <dc:Bounds x="750" y="1330" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="DataStoreReference_0as5i3t_di" bpmnElement="DataStoreReference_0as5i3t">
-        <dc:Bounds x="1700" y="1000" width="50" height="50" />
+        <dc:Bounds x="1257" y="835" width="50" height="50" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="1311" y="848" width="51" height="27" />
         </bpmndi:BPMNLabel>
@@ -782,7 +734,7 @@
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_0wvj9qx_di" bpmnElement="Activity_052zj9p">
-        <dc:Bounds x="780.0" y="820" width="100" height="80" />
+        <dc:Bounds x="330" y="820" width="100" height="80" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_0usl8j6_di" bpmnElement="Event_1xfog2v">
@@ -834,48 +786,48 @@
         <di:waypoint x="1064" y="530" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0ccb63r_di" bpmnElement="Flow_0ccb63r">
-        <di:waypoint x="728.0" y="860" />
-        <di:waypoint x="780.0" y="860" />
+        <di:waypoint x="278" y="860" />
+        <di:waypoint x="330" y="860" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0qn1zef_di" bpmnElement="Flow_0qn1zef">
-        <di:waypoint x="880.0" y="860" />
-        <di:waypoint x="935.0" y="860" />
+        <di:waypoint x="430" y="860" />
+        <di:waypoint x="485" y="860" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0ishmbg_di" bpmnElement="Flow_0ishmbg">
-        <di:waypoint x="985.0" y="860" />
-        <di:waypoint x="1040.0" y="860" />
+        <di:waypoint x="535" y="860" />
+        <di:waypoint x="590" y="860" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1004.0" y="842" width="18" height="14" />
+          <dc:Bounds x="554" y="842" width="18" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_091vx6a_di" bpmnElement="Flow_091vx6a">
-        <di:waypoint x="960.0" y="885" />
-        <di:waypoint x="960.0" y="960" />
-        <di:waypoint x="1040.0" y="960" />
+        <di:waypoint x="510" y="885" />
+        <di:waypoint x="510" y="960" />
+        <di:waypoint x="590" y="960" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="968.0" y="919.5" width="15" height="14" />
+          <dc:Bounds x="518" y="919.5" width="15" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_19nxo7i_di" bpmnElement="Flow_19nxo7i">
-        <di:waypoint x="1140.0" y="860" />
-        <di:waypoint x="1200.0" y="860" />
+        <di:waypoint x="690" y="860" />
+        <di:waypoint x="750" y="860" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_11uqjse_di" bpmnElement="Flow_11uqjse">
-        <di:waypoint x="1140.0" y="960" />
-        <di:waypoint x="1225.0" y="960" />
-        <di:waypoint x="1225.0" y="885" />
+        <di:waypoint x="690" y="960" />
+        <di:waypoint x="775" y="960" />
+        <di:waypoint x="775" y="885" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_1vhcup5_di" bpmnElement="Flow_1vhcup5">
-        <di:waypoint x="1250.0" y="860" />
-        <di:waypoint x="1312.0" y="860" />
+        <di:waypoint x="800" y="860" />
+        <di:waypoint x="862" y="860" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_1klohxp_di" bpmnElement="Flow_1klohxp">
-        <di:waypoint x="728.0" y="1110" />
-        <di:waypoint x="780.0" y="1110" />
+        <di:waypoint x="278" y="1110" />
+        <di:waypoint x="330" y="1110" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_1drh37y_di" bpmnElement="Flow_1drh37y">
-        <di:waypoint x="880.0" y="1110" />
-        <di:waypoint x="932.0" y="1110" />
+        <di:waypoint x="430" y="1110" />
+        <di:waypoint x="482" y="1110" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0urmnr7_di" bpmnElement="Flow_0urmnr7">
         <di:waypoint x="278" y="1370" />
@@ -1150,54 +1102,6 @@
         <di:waypoint x="1620" y="1040" />
         <di:waypoint x="1287" y="1040" />
         <di:waypoint x="1287" y="885" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNShape id="F2_Each_start_di" bpmnElement="F2_Each_start" isExpanded="true">
-        <dc:Bounds x="680" y="795" width="750" height="210" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="F2_Start_start_di" bpmnElement="F2_Start_start">
-        <dc:Bounds x="710" y="842" width="36" height="36" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="F2_Scan_start_di" bpmnElement="F2_Scan_start">
-        <dc:Bounds x="440" y="820" width="100" height="80" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="F2_End_start_di" bpmnElement="F2_End_start">
-        <dc:Bounds x="1500" y="842" width="36" height="36" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNEdge id="F2_ToScan_start_di" bpmnElement="F2_ToScan_start">
-        <di:waypoint x="278" y="860" />
-        <di:waypoint x="440" y="860" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="F2_ToEach_start_di" bpmnElement="F2_ToEach_start">
-        <di:waypoint x="540" y="860" />
-        <di:waypoint x="680" y="860" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="F2_Done_start_di" bpmnElement="F2_Done_start">
-        <di:waypoint x="1430" y="860" />
-        <di:waypoint x="1500" y="860" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNShape id="F2_Each_end_di" bpmnElement="F2_Each_end" isExpanded="true">
-        <dc:Bounds x="680" y="1045" width="750" height="210" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="F2_Start_end_di" bpmnElement="F2_Start_end">
-        <dc:Bounds x="710" y="1092" width="36" height="36" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="F2_Scan_end_di" bpmnElement="F2_Scan_end">
-        <dc:Bounds x="440" y="1070" width="100" height="80" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="F2_End_end_di" bpmnElement="F2_End_end">
-        <dc:Bounds x="1500" y="1092" width="36" height="36" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNEdge id="F2_ToScan_end_di" bpmnElement="F2_ToScan_end">
-        <di:waypoint x="278" y="1110" />
-        <di:waypoint x="440" y="1110" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="F2_ToEach_end_di" bpmnElement="F2_ToEach_end">
-        <di:waypoint x="540" y="1110" />
-        <di:waypoint x="680" y="1110" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="F2_Done_end_di" bpmnElement="F2_Done_end">
-        <di:waypoint x="1430" y="1110" />
-        <di:waypoint x="1500" y="1110" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
