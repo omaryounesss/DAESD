@@ -1,0 +1,63 @@
+<?xml version='1.0' encoding='utf-8'?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:modeler="http://camunda.org/schema/modeler/1.0" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Web Modeler" exporterVersion="64767e4" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.10.0">
+  <bpmn:process id="check_product_stock_status" name="check-product-stock-status" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_1" name="Stock status check requested">
+      <bpmn:outgoing>Flow_0u2spw1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_0u2spw1" sourceRef="StartEvent_1" targetRef="Activity_0oddj27" />
+    <bpmn:endEvent id="Event_117lftn" name="Stock quantity retrieved">
+      <bpmn:incoming>Flow_01okuzh</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_01okuzh" sourceRef="Activity_0oddj27" targetRef="Event_117lftn" />
+    <bpmn:serviceTask id="Activity_0oddj27" name="Retrieve current stock quantity">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="f2-retrieve-stock" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0u2spw1</bpmn:incoming>
+      <bpmn:outgoing>Flow_01okuzh</bpmn:outgoing>
+      <bpmn:property id="Property_0s4abpo" name="__targetRef_placeholder" />
+      <bpmn:dataInputAssociation id="DataInputAssociation_1kt7795">
+        <bpmn:sourceRef>DataStoreReference_1enb0ed</bpmn:sourceRef>
+        <bpmn:targetRef>Property_0s4abpo</bpmn:targetRef>
+      </bpmn:dataInputAssociation>
+    </bpmn:serviceTask>
+    <bpmn:dataStoreReference id="DataStoreReference_1enb0ed" name="Product Catalogue" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="check_product_stock_status">
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
+        <dc:Bounds x="143" y="100" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="121" y="143" width="81" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_117lftn_di" bpmnElement="Event_117lftn">
+        <dc:Bounds x="402" y="100" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="385" y="143" width="70" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0987aox_di" bpmnElement="Activity_0oddj27">
+        <dc:Bounds x="240" y="78" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataStoreReference_1enb0ed_di" bpmnElement="DataStoreReference_1enb0ed">
+        <dc:Bounds x="265" y="235" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="265" y="292" width="51" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_0u2spw1_di" bpmnElement="Flow_0u2spw1">
+        <di:waypoint x="179" y="118" />
+        <di:waypoint x="240" y="118" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_01okuzh_di" bpmnElement="Flow_01okuzh">
+        <di:waypoint x="340" y="118" />
+        <di:waypoint x="402" y="118" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataInputAssociation_1kt7795_di" bpmnElement="DataInputAssociation_1kt7795">
+        <di:waypoint x="290" y="235" />
+        <di:waypoint x="290" y="158" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

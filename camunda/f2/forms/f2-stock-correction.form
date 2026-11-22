@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 16,
+  "id": "f2-stock-correction",
+  "type": "default",
+  "components": [
+    {
+      "type": "text",
+      "text": "# Correct stock and season update",
+      "id": "heading"
+    },
+    {
+      "type": "text",
+      "text": "Validation errors: {{validationErrors}}",
+      "id": "errors"
+    },
+    {
+      "type": "number",
+      "key": "quantity",
+      "label": "Stock quantity",
+      "id": "quantity",
+      "validate": {
+        "required": true,
+        "min": 0
+      }
+    },
+    {
+      "type": "textfield",
+      "key": "availableFrom",
+      "label": "Season start (YYYY-MM-DD)",
+      "id": "from",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "type": "textfield",
+      "key": "availableUntil",
+      "label": "Season end (YYYY-MM-DD, inclusive)",
+      "id": "until",
+      "validate": {
+        "required": true
+      }
+    }
+  ],
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.9.0",
+  "exporter": {
+    "name": "DaESD F2",
+    "version": "1.0"
+  }
+}

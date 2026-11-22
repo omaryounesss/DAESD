@@ -1,0 +1,7 @@
+{
+  "productId": "P1",
+  "quantity": 20,
+  "availableFrom": "2026-11-01",
+  "availableUntil": "2026-12-31",
+  "lowStockThreshold": 5
+}

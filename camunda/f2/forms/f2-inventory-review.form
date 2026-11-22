@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 16,
+  "id": "f2-inventory-review",
+  "type": "default",
+  "components": [
+    {
+      "type": "text",
+      "text": "# Review invalid stock update",
+      "id": "heading"
+    },
+    {
+      "type": "text",
+      "text": "Validation errors: {{validationErrors}}",
+      "id": "errors"
+    },
+    {
+      "type": "checkbox",
+      "key": "allowAnotherCorrection",
+      "label": "Allow another producer correction",
+      "id": "allow",
+      "defaultValue": false
+    },
+    {
+      "type": "textarea",
+      "key": "reviewNotes",
+      "label": "Review notes",
+      "id": "notes",
+      "validate": {
+        "required": true
+      }
+    }
+  ],
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.9.0",
+  "exporter": {
+    "name": "DaESD F2",
+    "version": "1.0"
+  }
+}
