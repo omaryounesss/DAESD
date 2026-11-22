@@ -27,6 +27,8 @@ The original producer is a black-box pool. There is no producer user task to att
 
 ## Explicit seasonal timer demo configuration
 
+**Update:** the inventory service now also has a persistent per-product scheduler. It replaces schedules when dates change, rechecks current dates/stock and recovers missed actions after restart. See [scheduler behaviour and BPMN integration boundary](../../docs/f2-season-scheduler.md). It updates the service catalogue directly; it does not trigger Zain's seasonal BPMN routes. Those original fixed timer starts remain the separate single-product demonstration described below. They have not been silently replaced or described as dynamically rescheduled.
+
 A timer start creates a fresh instance without product variables from earlier updates. To preserve the original graph, these routes are configured for ONE demonstration product. Timer dates come from `services/inventory-service/demo-product.json`: season start at UTC midnight on availableFrom; season end at UTC midnight on the day after inclusive availableUntil.
 
 Set `F2_TIMER_PRODUCT_ID=P1` in the worker. Change the product/date configuration and rebuild/redeploy for a different demonstration. Updating dates in an instance does not reschedule deployment-level timers. Past timer dates may fire immediately on deployment. There is no recurring timer or catalogue scanner. Current catalogue dates are rechecked so stale timers cannot enable an out-of-season product. This is a limited timer demonstration, not a complete multi-product scheduler.
@@ -62,7 +64,7 @@ Three invalid attempts route to administrator review; allowAnotherCorrection=tru
 
 ## Validation
 
-`python -m unittest discover -s tests -p test_inventory.py -v`: 14 checks pass, including exact original graph/nesting/diagram preservation and explicit timer product configuration.
+`python -m unittest discover -s tests -p 'test_*.py' -v`: 22 checks pass, including original graph/nesting/diagram preservation, explicit timer demo configuration, and eight scheduler scenarios.
 
 `cd tests/camunda-f2; mvn -o -Dtest=ModelValidationTest test`: Camunda parser/schema validation passes for the actual two BPMN files. The three engine route tests compile but cannot start here because local loopback sockets are blocked. No live F2 route is claimed as passed. Connect the worker and capture Tasklist/Operate evidence before claiming successful execution.
 

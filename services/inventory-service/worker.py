@@ -5,7 +5,7 @@ Run only one worker against a given catalogue database.
 """
 import argparse
 import base64
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timezone, timedelta
 import json
 import os
 from pathlib import Path
@@ -30,7 +30,67 @@ class Catalogue:
         CREATE TABLE IF NOT EXISTS orders(id TEXT PRIMARY KEY, product_id TEXT NOT NULL, purchased INTEGER NOT NULL);
         CREATE TABLE IF NOT EXISTS notifications(id TEXT PRIMARY KEY, body TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS outbox(id TEXT PRIMARY KEY, body TEXT NOT NULL, sent INTEGER DEFAULT 0);
+        CREATE TABLE IF NOT EXISTS season_schedule(
+          product_id TEXT NOT NULL, season_version INTEGER NOT NULL,
+          kind TEXT NOT NULL, due TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending',
+          PRIMARY KEY(product_id,season_version,kind));
+        CREATE TABLE IF NOT EXISTS season_events(
+          product_id TEXT NOT NULL, season_version INTEGER NOT NULL, kind TEXT NOT NULL,
+          due TEXT NOT NULL, applied_at TEXT NOT NULL, available INTEGER NOT NULL,
+          quantity INTEGER NOT NULL,
+          PRIMARY KEY(product_id,season_version,kind));
         ''')
+        # Upgrade existing demo catalogues without discarding products or job history.
+        with self.db:
+            self.db.execute('BEGIN IMMEDIATE')
+            for (body,) in self.db.execute('SELECT body FROM products').fetchall():
+                product=json.loads(body)
+                if 'seasonVersion' not in product:
+                    product['seasonVersion']=1
+                    self.save(product)
+                    self._schedule(product)
+
+    def _schedule(self,p):
+        """Called inside the same transaction that persists the changed dates."""
+        self.db.execute("UPDATE season_schedule SET status='cancelled' WHERE product_id=? AND status='pending'",
+                        (p['productId'],))
+        boundaries={'start':p['availableFrom'],
+                    'end':str(date.fromisoformat(p['availableUntil'])+timedelta(days=1))}
+        for kind,due in boundaries.items():
+            self.db.execute('INSERT INTO season_schedule(product_id,season_version,kind,due) VALUES (?,?,?,?)',
+                            (p['productId'],p['seasonVersion'],kind,due))
+
+    def apply_due_seasons(self,now=None):
+        """Apply persistent due actions, rechecking current dates and stock.
+
+        Service-side scheduler only: it does not start or alter Camunda routes.
+        Date boundaries are UTC, and end dates are inclusive. A restart processes
+        missed boundaries using current state, never enabling a season already over.
+        """
+        instant=now or datetime.now(timezone.utc)
+        if instant.tzinfo is None:raise ValueError('Scheduler time must include a timezone')
+        instant=instant.astimezone(timezone.utc);today=instant.date()
+        applied=[]
+        with self.db:
+            self.db.execute('BEGIN IMMEDIATE')
+            due=self.db.execute("SELECT product_id,season_version,kind,due FROM season_schedule WHERE status='pending' AND due<=? ORDER BY due,product_id,kind",
+                                (str(today),)).fetchall()
+            for pid,version,kind,boundary in due:
+                p=self.get(pid)
+                expected=p['availableFrom'] if kind=='start' else str(date.fromisoformat(p['availableUntil'])+timedelta(days=1))
+                if version!=p['seasonVersion'] or boundary!=expected:
+                    self.db.execute("UPDATE season_schedule SET status='cancelled' WHERE product_id=? AND season_version=? AND kind=?",
+                                    (pid,version,kind));continue
+                p['withinSeason']=date.fromisoformat(p['availableFrom'])<=today<=date.fromisoformat(p['availableUntil'])
+                p['available']=p['quantity']>0 and p['withinSeason']
+                self.save(p)
+                self.db.execute('INSERT OR IGNORE INTO season_events VALUES (?,?,?,?,?,?,?)',
+                    (pid,version,kind,boundary,instant.isoformat(),int(p['available']),p['quantity']))
+                self.db.execute("UPDATE season_schedule SET status='completed' WHERE product_id=? AND season_version=? AND kind=?",
+                                (pid,version,kind))
+                applied.append({'productId':pid,'seasonVersion':version,'boundary':kind,
+                                'available':p['available'],'quantity':p['quantity']})
+        return applied
 
     def get(self,pid):
         row=self.db.execute('SELECT body FROM products WHERE id=?',(pid,)).fetchone()
@@ -48,7 +108,11 @@ class Catalogue:
         p={**p,'lowStockThreshold':p.get('lowStockThreshold',5),'available':False,'revision':1}
         p['withinSeason']=start<=datetime.now(timezone.utc).date()<=end
         p['available']=p['quantity']>0 and p['withinSeason']
-        with self.db:self.save(p)
+        with self.db:
+            self.db.execute('BEGIN IMMEDIATE')
+            previous=self.db.execute('SELECT body FROM products WHERE id=?',(p['productId'],)).fetchone()
+            p['seasonVersion']=json.loads(previous[0]).get('seasonVersion',0)+1 if previous else 1
+            self.save(p);self._schedule(p)
 
     def handle(self,key,kind,v,today=None):
         """Commit business effects and cached response in one transaction.
@@ -56,10 +120,11 @@ class Catalogue:
         A retry of the same Zeebe job does not repeat a stock decrement or increment
         a correction counter. Paid orders are also deduplicated by orderId.
         """
-        row=self.db.execute('SELECT result FROM jobs WHERE id=?',(str(key),)).fetchone()
-        if row:return json.loads(row[0])
         now=today or datetime.now(timezone.utc).date()
         with self.db:
+            self.db.execute('BEGIN IMMEDIATE')
+            row=self.db.execute('SELECT result FROM jobs WHERE id=?',(str(key),)).fetchone()
+            if row:return json.loads(row[0])
             out=self._handle(str(key),kind,v,now)
             self.db.execute('INSERT INTO jobs VALUES (?,?)',(str(key),json.dumps(out)))
         return out
@@ -96,7 +161,11 @@ class Catalogue:
             # Recheck independently; a forged process flag cannot persist invalid data.
             q=v.get('quantity');start=date.fromisoformat(v['availableFrom']);end=date.fromisoformat(v['availableUntil'])
             if not integer(q) or end<start:raise ValueError('Invalid update cannot be saved')
+            changed=(p['availableFrom'],p['availableUntil'])!=(str(start),str(end))
             p.update(quantity=q,availableFrom=str(start),availableUntil=str(end),revision=p['revision']+1)
+            if changed:
+                p['seasonVersion']+=1
+                self._schedule(p)
         elif kind=='reduce-stock':
             order=v.get('orderId');n=v.get('purchasedQuantity')
             if not order or not integer(n) or n==0:raise ValueError('orderId and positive purchasedQuantity required')
@@ -136,7 +205,10 @@ def request(path,body):
 def run(catalogue):
     while True:
         try:
+            for action in catalogue.apply_due_seasons():
+                print('Season action: '+json.dumps(action),flush=True)
             for kind in KINDS:
+                catalogue.apply_due_seasons()
                 jobs=request('/jobs/activation',{'type':'f2-'+kind,'worker':'daesd-f2',
                      'timeout':30000,'maxJobsToActivate':10,'requestTimeout':0}).get('jobs',[])
                 for job in jobs:
@@ -155,6 +227,8 @@ def run(catalogue):
 if __name__=='__main__':
     parser=argparse.ArgumentParser();parser.add_argument('--db',default='f2-catalogue.sqlite3')
     parser.add_argument('--seed',type=Path,help='Seed a demo published product from JSON and exit')
+    parser.add_argument('--scheduler-once',action='store_true',help='Apply due catalogue schedules once without connecting to Camunda')
     args=parser.parse_args();catalogue=Catalogue(args.db)
     if args.seed:catalogue.seed(json.loads(args.seed.read_text()));print('Demo product seeded.')
+    elif args.scheduler_once:print(json.dumps(catalogue.apply_due_seasons(),indent=2))
     else:run(catalogue)
