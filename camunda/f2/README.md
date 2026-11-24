@@ -1,4 +1,4 @@
-# F2 - Zain's original operational BPMN made executable
+# F2 - executable inventory process with producer Tasklist forms
 
 Owner: Omar Fathy (M4). Operational design: Zain-Eldin Sharaf (M3).
 
@@ -8,9 +8,11 @@ This replaces the rejected 22 November draft. Scanner tasks, wrapper subprocesse
 
 ## Original design preserved
 
+**Tasklist refinement, 24 November:** the executable now has a none start, catalogue-loading service task and producer stock-update user task. The former correction message catch is a native correction user task. The detailed [operational-to-executable mapping](../../docs/f2-tasklist-refinement.md) supersedes the exact graph/layout preservation claims below. Original operational files remain unchanged, existing business sequence-flow endpoints are preserved, and an executable interaction row is added. New Tasklist execution has not yet been verified live.
+
 Both executable BPMN files are generated from the untouched sources in `models/operational-bpmn/functionality-2/`. The main source blob is `4ba83ea042c09a4b9493e1c21a3226e80b444b69`.
 
-Automated comparison checks all original node IDs, every sequence-flow endpoint, nesting/ownership, and the entire BPMN diagram (bounds, waypoints, labels and pools/lanes). No business nodes, routes or subprocesses are added. The original generic "Keep product unavailable" task receives a service-task implementation with its original ID, name, position and connections.
+Automated comparison checks the original business node IDs and sequence-flow endpoints, with explicit allowances for the documented producer entry path and correction event-to-task refinement. The executable layout is extended; it is no longer identical to the operational diagram. The original generic "Keep product unavailable" task still receives a service-task implementation.
 
 Added execution settings: executable flag; worker types; FEEL conditions/default paths; message definitions and correlation; administrator form reference; literal called process ID and returned variables; timer values. Target: Camunda 8.9.
 
@@ -21,9 +23,10 @@ Added execution settings: executable flag; worker types; FEEL conditions/default
 | processes/inventory-seasonal-availability.bpmn | Full original operational F2 workflow with execution properties |
 | processes/check-product-stock-status.bpmn | Original reusable stock-check workflow with a worker type |
 | forms/f2-inventory-review.form | Linked to the original administrator task |
-| forms/f2-stock-correction.form | Standalone producer form specification/preview; not a Tasklist task |
+| forms/f2-stock-update.form | Linked native producer task with catalogue product dropdown and stock/date fields |
+| forms/f2-stock-correction.form | Linked native correction task showing validation errors and previous values |
 
-The original producer is a black-box pool. There is no producer user task to attach the correction form to. Corrections arrive at Zain's original message catch through an external producer UI or a demonstration message. No separate helper diagram is added.
+The original producer remains a black-box participant in the operational source. The executable hosts producer interaction through Tasklist, as F1 does. Start a new instance using the none start; the worker prepares product choices and an updateId, then Tasklist presents the submission form. Invalid submissions open the correction form in the same instance. No separate helper process is added.
 
 ## Explicit seasonal timer demo configuration
 
@@ -53,10 +56,10 @@ Publish through `/v2/messages/publication` with unique messageId, correlationKey
 | Message | Purpose | Correlation key |
 |---|---|---|
 | f2-stock-update | Start original update route | productId |
-| f2-stock-corrected | Resume original correction catch | updateId of waiting update |
+| f2-stock-corrected | Legacy version only; refined deployments use the Tasklist correction form | updateId of an old waiting instance |
 | f2-order-paid | Start original stock-reduction route | productId |
 
-Example correction:
+Legacy correction (existing instances on the old deployed version only):
 
 ```json
 {"name":"f2-stock-corrected","correlationKey":"U1","messageId":"U1-correction-1","timeToLive":60000,"variables":{"quantity":12,"availableFrom":"2026-11-01","availableUntil":"2026-12-31"}}
@@ -66,7 +69,7 @@ Three invalid attempts route to administrator review; allowAnotherCorrection=tru
 
 ## Validation
 
-`python -m unittest discover -s tests -p 'test_*.py' -v`: 32 checks passed on 24 November, including original graph/nesting/diagram preservation, scheduler behaviour, connection handling and shared F1/F2 persistence.
+`python -m unittest discover -s tests -p 'test_*.py' -v`: 35 checks passed on 24 November, covering the documented executable refinements, form output contracts, catalogue choices and retry-stable update IDs, scheduler behaviour, connection handling and shared F1/F2 persistence.
 
 The existing Maven parser/schema validation and engine route tests are separate from Python worker tests. Engine route tests were previously blocked by local socket restrictions; do not count them as passed. Live F2 results are recorded in [23 November evidence](../../docs/f2-live-validation-2026-11-23.md) and the 24 November review above. The seasonal BPMN starts and 48-hour review timeout still need successful execution evidence.
 

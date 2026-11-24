@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 16,
+  "id": "f2-stock-update",
+  "type": "default",
+  "components": [
+    {
+      "type": "text",
+      "text": "# Update stock and seasonal availability",
+      "id": "heading"
+    },
+    {
+      "type": "text",
+      "text": "Choose an existing catalogue product. Enter the new total stock quantity, not the amount to add. Dates are inclusive. If no products are listed, publish a product through F1 first and start a new update.",
+      "id": "instructions"
+    },
+    {
+      "type": "select",
+      "key": "productId",
+      "label": "Product",
+      "id": "product",
+      "valuesExpression": "=productOptions",
+      "searchable": true,
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "type": "number",
+      "key": "quantity",
+      "label": "New total stock quantity",
+      "id": "quantity",
+      "validate": {
+        "required": true,
+        "min": 0
+      }
+    },
+    {
+      "type": "textfield",
+      "key": "availableFrom",
+      "label": "Season start (YYYY-MM-DD)",
+      "id": "from",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "type": "textfield",
+      "key": "availableUntil",
+      "label": "Season end (YYYY-MM-DD, inclusive)",
+      "id": "until",
+      "validate": {
+        "required": true
+      }
+    }
+  ],
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.9.0",
+  "exporter": {
+    "name": "DaESD F2",
+    "version": "1.0"
+  }
+}

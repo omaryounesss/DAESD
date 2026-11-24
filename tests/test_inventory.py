@@ -66,24 +66,38 @@ class InventoryTests(unittest.TestCase):
         self.assertEqual(10,self.c.get('P1')['quantity'])
 
 class ModelTests(unittest.TestCase):
-    def test_original_nodes_and_flow_endpoints_preserved(self):
+    def test_documented_tasklist_refinements_preserve_business_routes(self):
         src=E.parse(ROOT/'models/operational-bpmn/functionality-2/inventory-seasonal-availability.bpmn')
         dst=E.parse(ROOT/'camunda/f2/processes/inventory-seasonal-availability.bpmn')
         orig={e.get('id'):e for e in src.iter() if e.get('id')}
         new={e.get('id'):e for e in dst.iter() if e.get('id')}
-        self.assertFalse(set(orig)-set(new))
+        self.assertEqual({'MessageEventDefinition_0b0n9pd'},set(orig)-set(new))
         for key,e in orig.items():
             if e.tag==B+'sequenceFlow':
                 self.assertEqual((e.get('sourceRef'),e.get('targetRef')),(new[key].get('sourceRef'),new[key].get('targetRef')))
         added=set(new)-set(orig)
-        self.assertFalse([k for k in added if new[k].tag in (B+'task',B+'serviceTask',B+'startEvent',B+'endEvent',B+'subProcess',B+'sequenceFlow')])
-        for ident,e in orig.items():
-            if e.tag.endswith('BPMNDiagram'):
-                def signature(n):return (n.tag,tuple(sorted(n.attrib.items())),(n.text or '').strip(),tuple(signature(c) for c in n))
-                self.assertEqual(signature(e),signature(new[ident]))
+        business_added={k for k in added if new[k].tag in (B+'task',B+'userTask',B+'serviceTask',B+'startEvent',B+'endEvent',B+'subProcess',B+'sequenceFlow')}
+        self.assertEqual({'Start_ProducerUpdate','Task_PrepareProducerUpdate','Task_SubmitStockUpdate',
+                         'Flow_ProducerPrepare','Flow_ProducerSubmit','Flow_ProducerValidate'},business_added)
+        self.assertEqual(B+'userTask',new['Event_0pab392'].tag)
         def ownership(t):
-            return {c.get('id'):e.get('id') for e in t.iter() for c in e if c.get('id') in orig}
+            return {c.get('id'):e.get('id') for e in t.iter() for c in e if c.get('id') in orig and c.get('id')!='MessageEventDefinition_0b0n9pd'}
         self.assertEqual(ownership(src),ownership(dst))
+
+    def test_tasklist_forms_limit_outputs_and_leave_paid_order_start(self):
+        import json
+        root=E.parse(ROOT/'camunda/f2/processes/inventory-seasonal-availability.bpmn')
+        for ident,fid,outputs in [('Task_SubmitStockUpdate','f2-stock-update',{'productId','quantity','availableFrom','availableUntil'}),
+                                  ('Event_0pab392','f2-stock-correction',{'quantity','availableFrom','availableUntil'})]:
+            task=root.find(".//"+B+"userTask[@id='"+ident+"']")
+            self.assertIsNotNone(task.find('.//'+Z+'userTask'))
+            self.assertEqual(fid,task.find('.//'+Z+'formDefinition').get('formId'))
+            self.assertEqual(outputs,{e.get('target') for e in task.findall('.//'+Z+'output')})
+            form=json.loads((ROOT/'camunda/f2/forms'/ (fid+'.form')).read_text())
+            self.assertEqual(outputs,{c['key'] for c in form['components'] if 'key' in c})
+        self.assertIsNotNone(root.find(".//"+B+"startEvent[@id='Start_ProducerUpdate']"))
+        self.assertIsNotNone(root.find(".//"+B+"startEvent[@id='Event_0k7qpmm']/"+B+'messageEventDefinition'))
+        self.assertEqual(3,len(root.findall('.//'+B+'userTask')))
     def test_executable_contracts_and_all_gateway_routes(self):
         for path in (ROOT/'camunda/f2/processes').glob('*.bpmn'):
             root=E.parse(path)
@@ -105,3 +119,4 @@ class ModelTests(unittest.TestCase):
         self.assertEqual('check_product_stock_status',root.find('.//'+Z+'calledElement').get('processId'))
 
 if __name__=='__main__':unittest.main(verbosity=2)
+

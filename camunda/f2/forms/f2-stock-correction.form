@@ -10,6 +10,11 @@
     },
     {
       "type": "text",
+      "text": "Product: {{productId}}. Update: {{updateId}}. Correct the fields below and submit to run validation again.",
+      "id": "context"
+    },
+    {
+      "type": "text",
       "text": "Validation errors: {{validationErrors}}",
       "id": "errors"
     },

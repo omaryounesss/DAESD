@@ -17,6 +17,7 @@ class InventoryProcessTest {
     var deployment=client.newDeployResourceCommand().addResourceFile(Path.of("..","..","camunda","f2","processes","check-product-stock-status.bpmn").toString());
     try(var paths=Files.walk(Path.of("..","..","camunda","f2"))) {
       for(var file:paths.filter(Files::isRegularFile).toList()) {
+        if(!file.toString().endsWith(".bpmn") && !file.toString().endsWith(".form")) continue;
         if(file.getFileName().toString().equals("check-product-stock-status.bpmn")) continue;
         // Embedded test engine uses job-based user tasks; deployment files keep native Tasklist tasks.
         var bytes=Files.readString(file).replaceAll("<zeebe:userTask\\s*/>", "").getBytes(java.nio.charset.StandardCharsets.UTF_8);
@@ -56,4 +57,28 @@ class InventoryProcessTest {
     engine.increaseTime(Duration.ofHours(49));idle();
     assertThat(instance).isCompleted().hasPassedElement("Event_1xmyihl").hasNotPassedElement("Activity_0t8snic");
   }
+  @Test void producerCanStartAndSubmitFromTasklist() throws Exception {
+    var instance=client.newCreateInstanceCommand().bpmnProcessId("Process_0g8kz9d").latestVersion().send().join();idle();
+    complete("f2-prepare-update",Map.of("updateId","UI-test","correctionAttempts",0,"productOptions",java.util.List.of()));
+    assertThat(instance).isWaitingAtElements("Task_SubmitStockUpdate");
+    complete("io.camunda.zeebe:userTask",Map.of("productId","P1","quantity",10,"availableFrom","2026-11-01","availableUntil","2026-12-31"));
+    complete("f2-validate-quantity",Map.of());
+    complete("f2-validate-season",Map.of("updateValid",true));
+    complete("f2-save-update",Map.of("quantity",10,"withinSeason",true,"lowStockThreshold",5));
+    complete("f2-available",Map.of("available",true));
+    assertThat(instance).isCompleted().hasPassedElement("Task_SubmitStockUpdate");
+  }
+  @Test void invalidUpdateUsesCorrectionTaskWithoutMessagePublication() throws Exception {
+    var instance=update();complete("f2-validate-quantity",Map.of());
+    complete("f2-validate-season",Map.of("updateValid",false,"correctionAttempts",1));
+    complete("f2-request-correction",Map.of());
+    assertThat(instance).isWaitingAtElements("Event_0pab392");
+    complete("io.camunda.zeebe:userTask",Map.of("quantity",12,"availableFrom","2026-11-01","availableUntil","2026-12-31"));
+    complete("f2-validate-quantity",Map.of());
+    complete("f2-validate-season",Map.of("updateValid",true));
+    complete("f2-save-update",Map.of("quantity",12,"withinSeason",true,"lowStockThreshold",5));
+    complete("f2-available",Map.of("available",true));
+    assertThat(instance).isCompleted().hasPassedElement("Event_0pab392");
+  }
 }
+

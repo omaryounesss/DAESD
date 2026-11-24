@@ -14,6 +14,7 @@ import time
 import urllib.request
 import urllib.error
 import urllib.parse
+import uuid
 
 _oauth_token=None
 _oauth_expires=0
@@ -45,7 +46,7 @@ def authorization_header():
         return 'Basic '+base64.b64encode(raw.encode()).decode()
     return None
 
-KINDS = ('validate-quantity','validate-season','save-update','reduce-stock',
+KINDS = ('prepare-update','validate-quantity','validate-season','save-update','reduce-stock',
          'available','unavailable','notify-low','notify-zero','request-correction',
          'save-final','retrieve-stock')
 
@@ -161,6 +162,12 @@ class Catalogue:
         return out
 
     def _handle(self,key,kind,v,now):
+        if kind=='prepare-update':
+            products=[json.loads(row[0]) for row in self.db.execute('SELECT body FROM products ORDER BY id')]
+            return {'updateId':'UI-'+uuid.uuid4().hex,'correctionAttempts':0,
+                    'validationErrors':[],
+                    'productOptions':[{'label':f"{p.get('name',p['productId'])} - {p['productId']} (stock {p['quantity']})",
+                                       'value':p['productId']} for p in products]}
         if kind=='publish-product':
             if v.get('productDetailsValid') is not True:
                 raise ValueError('F1 publication requires validated product details')
