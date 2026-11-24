@@ -1,3 +1,5 @@
+> Current F2 status: the Tasklist, message-scheduler and notification-service refinements supersede older F2 instructions in this historical review. Use [the current runbook](../camunda/f2/README.md) and [version-2 live evidence](f2-tasklist-live-validation-2026-11-24.md).
+
 # F1 to F2 catalogue integration
 
 Current evidence update, 24 November: the catalogue now contains F1-published products. Live F2 update `omar-update-003` completed at quantity 40 and order `omar-order-008` completed at quantity 37 for the same product; Operate and SQLite agree. See [completion review](task1-completion-review-2026-11-24.md). The original installation/verification limitations below describe the earlier installation session, not a claim that integration is still undeployed.

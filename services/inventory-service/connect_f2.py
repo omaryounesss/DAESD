@@ -6,6 +6,9 @@ import os
 from pathlib import Path
 import sys
 import urllib.error
+import urllib.request
+import subprocess
+import time
 import worker
 
 ENDPOINT='https://lhr-1.api.camunda.io/848240b1-573c-4a07-bd52-723bea5b23b7'
@@ -51,14 +54,31 @@ def main():
     print('CONNECTED: the cluster accepted an authenticated topology request.',flush=True)
     if args.check_only:return
     catalogue=worker.Catalogue(str(args.db))
-    pid=os.environ.setdefault('F2_TIMER_PRODUCT_ID','P1')
-    try:catalogue.get(pid)
-    except ValueError:
-        product=json.loads(Path(__file__).with_name('demo-product.json').read_text())
-        product['productId']=pid;catalogue.seed(product)
-        print('Seeded demo product '+pid+' (existing products were not reset).')
+    # Only older deployed timer instances use this fallback. New seasonal
+    # messages always carry their productId; startup never inserts demo stock.
+    os.environ.setdefault('F2_TIMER_PRODUCT_ID','P1')
     print('Worker running. Keep this terminal open; Ctrl+C stops it. No credentials are written to disk.',flush=True)
-    worker.run(catalogue)
+    notification_process=None
+    def check_notification_service():
+        with urllib.request.urlopen('http://127.0.0.1:8765/health',timeout=2) as response:
+            if json.loads(response.read()).get('service')!='daesd-notification-simulation':
+                raise ValueError('Port 8765 is occupied by another service')
+    try:
+        try:check_notification_service()
+        except urllib.error.URLError:
+            notification_process=subprocess.Popen([sys.executable,'-u',str(Path(__file__).with_name('notification_service.py'))],
+                creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0),stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+            for attempt in range(20):
+                try:check_notification_service();break
+                except urllib.error.URLError:
+                    if notification_process.poll() is not None:raise ValueError('Notification Service could not start; check port 8765')
+                    time.sleep(0.1)
+            else:raise ValueError('Notification Service did not become ready')
+        print('NOTIFICATIONS: separate local simulated service is ready.',flush=True)
+        worker.run(catalogue)
+    finally:
+        if notification_process is not None:
+            notification_process.terminate();notification_process.wait(timeout=5)
 
 if __name__=='__main__':
     try:main()

@@ -1,3 +1,5 @@
+> Current F2 status: the Tasklist, message-scheduler and notification-service refinements supersede older F2 instructions in this historical review. Use [the current runbook](../camunda/f2/README.md) and [version-2 live evidence](f2-tasklist-live-validation-2026-11-24.md).
+
 # Task 1 completion review - 24 November 2026
 
 This is an evidence register and demonstration checklist, not a claim that Task 1 is finished. Deadline in the supplied assessment brief: before 14:00 UK time on 10 December 2026. No written report or recorded presentation is required; repository artefacts, live demonstration and individual understanding are assessed.

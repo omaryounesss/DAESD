@@ -120,6 +120,32 @@ class ModelTests(unittest.TestCase):
             self.assertEqual(float(label.get('x')),float(actual.get('x')),ident)
             checked+=1
         self.assertGreater(checked,10)
+
+    def test_responsibility_lanes_and_correction_edges_match_task_geometry(self):
+        d='{http://www.omg.org/spec/BPMN/20100524/DI}'
+        dc='{http://www.omg.org/spec/DD/20100524/DC}'
+        di='{http://www.omg.org/spec/DD/20100524/DI}'
+        r=E.parse(ROOT/'camunda/f2/processes/inventory-seasonal-availability.bpmn')
+        lanes={lane.get('id'):{ref.text for ref in lane.findall(B+'flowNodeRef')} for lane in r.findall('.//'+B+'lane')}
+        self.assertIn('Event_0pab392',lanes['Lane_ProducerTasklist'])
+        self.assertNotIn('Event_0pab392',lanes['Lane_1w7vtzs'])
+        self.assertIn('Task_PrepareProducerUpdate',lanes['Lane_1w7vtzs'])
+        self.assertNotIn('Task_PrepareProducerUpdate',lanes['Lane_ProducerTasklist'])
+        edge=r.find('.//'+d+"BPMNEdge[@bpmnElement='Flow_12vo3s4']")
+        points=[(float(p.get('x')),float(p.get('y'))) for p in edge.findall(di+'waypoint')]
+        shape=r.find('.//'+d+"BPMNShape[@bpmnElement='Event_0pab392']/"+dc+'Bounds')
+        self.assertEqual(float(shape.get('y'))+float(shape.get('height')),points[0][1])
+        self.assertGreater(points[1][1],points[0][1])
+        self.assertTrue(all(a[0]==b[0] or a[1]==b[1] for a,b in zip(points,points[1:])))
+
+    def test_seasonal_starts_use_messages_without_fixed_dates(self):
+        r=E.parse(ROOT/'camunda/f2/processes/inventory-seasonal-availability.bpmn')
+        self.assertEqual([],r.findall('.//'+B+'timeDate'))
+        for ident,name in [('Event_0ii4tpz','f2-season-start'),('Event_0g3ep4s','f2-season-end')]:
+            event=r.find('.//'+B+"startEvent[@id='"+ident+"']")
+            definition=event.find(B+'messageEventDefinition')
+            self.assertIsNotNone(definition)
+            self.assertEqual(name,r.find('.//'+B+"message[@id='"+definition.get('messageRef')+"']").get('name'))
     def test_executable_contracts_and_all_gateway_routes(self):
         for path in (ROOT/'camunda/f2/processes').glob('*.bpmn'):
             root=E.parse(path)
