@@ -2,6 +2,8 @@
 
 Status: implemented locally on 24 November 2026; deployment and native Tasklist execution still require verification. The older live runs prove the message-based version only.
 
+Uploaded both BPMNs and all three forms to the separate Camunda project [f2-tasklist-executable](https://hub.camunda.io/workspaces/92fa97e5-a7b4-4f61-8f95-8e16edc03f4c/projects/31fc8f52-d77b-47f0-8ffa-e7f9f93349bb). The submission form renders in Modeler with zero form problems. The refined diagram opens and its duplicate-process-ID error was resolved by moving the refinement out of the legacy F2 project. The legacy files were retained. The new project has not been deployed; Modeler still warns that the inherited season-start date is in the past, and the runtime has not yet been selected for this project. Deployment must not be mistaken for an isolated test: using the same process ID creates a new version on the shared cluster.
+
 ## User journey
 
 Start a new instance of **F2 Inventory and Seasonal Availability** (`Process_0g8kz9d`) using the none start. The shared worker loads current catalogue products and generates an updateId. In Tasklist, open **Update stock and seasonal availability**, choose a product, enter its new total quantity and inclusive season dates, then complete the task. Validation and persistence remain automated.
