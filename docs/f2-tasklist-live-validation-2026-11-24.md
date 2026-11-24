@@ -16,11 +16,13 @@ Environment: UWE Frenchay 2026. Deployment `2251799869041810` installed `Process
 | Paid order, purchase 2 | 2251799869046749 | Completed 16:39:53; quantity 5 to 3; orderId task1-v2-duplicate-20261124 |
 | Same order, different messageId | 2251799869046908 | Completed 16:40:06; quantity stayed 3/revision 20; only one order record |
 | Administrator rejection branch | 2251799869049739 | Completed 16:46:08 after native review rejected. This test deliberately started at review with counter=3; it isolates rejection and does not claim another three failed submissions |
-| Final restoration through external stock-update integration | 2251799869049982 | Message accepted; final SQLite quantity 5, revision 21, current season and available. Inspect end date separately if UI capture still showed running |
+| Final restoration through external stock-update integration | 2251799869049982 | Completed 16:46:23; final SQLite quantity 5, revision 21, current season and available |
 
 Native task keys: submission `2251799869042194`, correction `2251799869042539`; three-attempt submission `4503599682365786`, corrections `4503599682366351` and `4503599682366470`, administrator `4503599682366808`, post-approval correction `4503599682366996`; zero submission `6755399496049648`; restoration `2251799869045335`; isolated rejection `2251799869049747`.
 
 The ordinary producer journey used forms, not Swagger. Swagger was used for system-integration messages and isolated test setup. API publication acceptance was not counted as process completion.
+
+Final Operate inspection showed all eleven version-2 main instances above completed, with no running/incident cases in the selected process/version. This does not erase or claim to resolve historical version-1 incidents or unrelated group processes.
 
 ## Notification and scheduling effects
 
