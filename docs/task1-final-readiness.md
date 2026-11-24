@@ -39,6 +39,14 @@ This is a classroom system, with a single shared SQLite worker and a local simul
 
 ## Submission actions requiring people
 
+The following proposals are prepared so members can review concrete work:
+
+- [Model consistency review and C1-C8 decisions](task1-model-consistency-review.md)
+- [Evidence-based contribution proposal](task1-contribution-proposal.md)
+- [Merge order and final submission checklist](task1-merge-and-submission-plan.md)
+- [Timed demonstration and proposed speaker roles](task1-timed-demonstration.md)
+- [Assessment/route coverage and untested paths](task1-coverage-checklist.md)
+
 Review version finalised on 24 November 2026: implementation, execution evidence, setup, traceability, demo/Q&A guide and LESP discussion are prepared for group feedback. This is the current review baseline; revise it through later commits if the group requests changes.
 
 The technical review package is prepared in PR #64. It is not merged to main and is not a submitted assessment. The group must review model semantics and authorship, agree integration order with PR #60, agree/sign contributions individually, confirm the selected functionalities/demo arrangement with the module team and rehearse individual answers. No approval, signature or retrospective authorship certification is implied by this register.
