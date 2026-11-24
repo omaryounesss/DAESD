@@ -98,6 +98,28 @@ class ModelTests(unittest.TestCase):
         self.assertIsNotNone(root.find(".//"+B+"startEvent[@id='Start_ProducerUpdate']"))
         self.assertIsNotNone(root.find(".//"+B+"startEvent[@id='Event_0k7qpmm']/"+B+'messageEventDefinition'))
         self.assertEqual(3,len(root.findall('.//'+B+'userTask')))
+
+    def test_external_labels_move_with_their_original_geometry(self):
+        d='{http://www.omg.org/spec/BPMN/20100524/DI}'
+        c='{http://www.omg.org/spec/DD/20100524/DC}'
+        src=E.parse(ROOT/'models/operational-bpmn/functionality-2/inventory-seasonal-availability.bpmn')
+        dst=E.parse(ROOT/'camunda/f2/processes/inventory-seasonal-availability.bpmn')
+        elements={e.get('bpmnElement'):e for e in dst.iter() if e.get('bpmnElement')}
+        checked=0
+        for original in src.iter():
+            label=original.find(d+'BPMNLabel/'+c+'Bounds')
+            if label is None:continue
+            ident=original.get('bpmnElement')
+            if ident=='Event_0pab392':
+                self.assertIsNone(elements[ident].find(d+'BPMNLabel'))
+                continue
+            actual=elements[ident].find(d+'BPMNLabel/'+c+'Bounds')
+            self.assertIsNotNone(actual,ident)
+            old_y=float(label.get('y'))
+            self.assertEqual(old_y+(180 if old_y>=430 else 0),float(actual.get('y')),ident)
+            self.assertEqual(float(label.get('x')),float(actual.get('x')),ident)
+            checked+=1
+        self.assertGreater(checked,10)
     def test_executable_contracts_and_all_gateway_routes(self):
         for path in (ROOT/'camunda/f2/processes').glob('*.bpmn'):
             root=E.parse(path)

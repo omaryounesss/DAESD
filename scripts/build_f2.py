@@ -126,9 +126,24 @@ for shape in plane.findall('{'+D+'}BPMNShape'):
     elif float(bounds.get('y'))>=430:bounds.set('y',str(float(bounds.get('y'))+180))
     if ident=='Event_0pab392':
         bounds.set('x','1000');bounds.set('width','100');bounds.set('height','80')
+        # A task displays its name internally; the old event's external label
+        # would otherwise remain detached from the resized correction task.
+        label=shape.find('{'+D+'}BPMNLabel')
+        if label is not None:shape.remove(label)
 for edge in plane.findall('{'+D+'}BPMNEdge'):
     for waypoint in edge.findall('{'+I+'}waypoint'):
         if float(waypoint.get('y'))>=430:waypoint.set('y',str(float(waypoint.get('y'))+180))
+# External gateway/event/sequence-flow labels have independent DI bounds.
+# Translate them with the geometry, including Yes/No labels on routed edges.
+for label in plane.findall('.//{'+D+'}BPMNLabel'):
+    bounds=label.find('{'+C+'}Bounds')
+    if bounds is not None and float(bounds.get('y'))>=430:
+        bounds.set('y',str(float(bounds.get('y'))+180))
+# Reattach incoming/outgoing edges to the resized correction user task.
+for edge in plane.findall('{'+D+'}BPMNEdge'):
+    points=edge.findall('{'+I+'}waypoint')
+    if edge.get('bpmnElement')=='Flow_1lwoh2m':points[-1].set('x','1000')
+    if edge.get('bpmnElement')=='Flow_12vo3s4':points[0].set('x','1100')
 def shape(ident,x,y,width,height):
     s=add(plane,'BPMNShape',{'id':ident+'_di','bpmnElement':ident},ns=D)
     add(s,'Bounds',dict(x=str(x),y=str(y),width=str(width),height=str(height)),ns=C)
