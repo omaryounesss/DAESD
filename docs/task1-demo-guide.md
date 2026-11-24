@@ -70,9 +70,9 @@ Offline mode requires dependencies already cached. The full embedded process tes
 - Why seasonal messages carry product and version, and why an end date is inclusive.
 - What remains a limitation: paid-order oversell compensation, product ownership, real notification channels and availability at production scale.
 
-## LESP discussion prompts
+## Legal, ethical, social and professional considerations
 
-Discuss concrete implications rather than asserting legal compliance: minimise producer information, protect credentials, restrict catalogue access, preserve accurate product/certification claims, make validation feedback accessible, and keep honest audit/contribution records. Identify who is accountable for a certification decision and how a disputed stock update can be traced. Disclose AI-assisted implementation, forms, executable refinements, tests and documentation accurately. Each member should explain what they reviewed and understood; the model authors must review consistency. Check primary legal sources before making specific legal claims.
+The complete [LESP review document](task1-lesp-considerations.md) explains the legal sources, implementation choices, stakeholder impacts, authorship/evidence responsibilities and Task 2 actions. For the demonstration, explain the link between each safeguard and the harm it reduces: accurate claims, protected information, usable corrections, fair outage handling and auditable decisions. Distinguish existing safeguards from future work and simulated outcomes from real certification or delivery.
 
 ## Group-only completion
 

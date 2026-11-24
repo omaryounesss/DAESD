@@ -21,7 +21,7 @@ Submission deadline in the supplied brief: before 14:00 UK time on 10 December 2
 | Individual and group rehearsal | Fresh F1 version-11 verified/rejected organic routes and both manual outcomes were exercised with the actual certification worker. Repeat the agreed demonstration with members present; the 24-hour F1 escalation was not newly observed live |
 | Review and merge order | Work is in draft PR #64 targeting the F2 feature branch. Main has not been merged; PR #60 and group integration order need coordinated review |
 | Signed contribution matrix | Members must agree truthful contributions and sign for themselves |
-| LESP and individual rehearsal | Explain concrete design implications, sources and trade-offs: access to catalogue/credentials, accurate product claims and traceability, accessible validation feedback, audit accuracy and AI acknowledgement |
+| LESP and individual rehearsal | The complete [LESP review document](task1-lesp-considerations.md) is prepared with official references. Members must review the reasoning, resolve permitted-AI/authorship questions against the brief and rehearse their explanation |
 | Final runtime presentation | Modeler layout and documentation were corrected on 24 November; the obsolete incoming correction message was removed. The connected F1-to-F2 journey was exercised after recovery. Deploy/rehearse the agreed final bundles together; presentation-only Modeler changes are not retroactive changes to existing instances |
 
 Do not add more forms merely to increase their count. Protect time for a coherent, repeatable demonstration: F1 publishes -> producer updates/corrects -> catalogue changes -> availability decision -> notification receipt; then show review, seasonal and duplicate/timeout evidence.
@@ -38,6 +38,8 @@ This is a classroom system, with a single shared SQLite worker and a local simul
 - The UWE environment was resumed from Paused to Healthy. Both workers were restarted with existing credentials. Five fresh F1 version-11 cases completed: verified organic, rejected/remove claim, rejected/withhold, three actual timeouts/manual approve, and three actual timeouts/manual reject. The verified product then passed through native F2 stock update and independent low-stock receipt acceptance. See [fresh check](task1-final-live-check-2026-11-24.md).
 
 ## Submission actions requiring people
+
+Review version finalised on 24 November 2026: implementation, execution evidence, setup, traceability, demo/Q&A guide and LESP discussion are prepared for group feedback. This is the current review baseline; revise it through later commits if the group requests changes.
 
 The technical review package is prepared in PR #64. It is not merged to main and is not a submitted assessment. The group must review model semantics and authorship, agree integration order with PR #60, agree/sign contributions individually, confirm the selected functionalities/demo arrangement with the module team and rehearse individual answers. No approval, signature or retrospective authorship certification is implied by this register.
 

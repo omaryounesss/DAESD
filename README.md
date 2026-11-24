@@ -62,6 +62,8 @@ Current integration is on `review/task1-integration-evidence-20261124` (PR #64),
 
 ## Contribution
 
+Task 1 review material: [legal, ethical, social and professional considerations](docs/task1-lesp-considerations.md), [demonstration guide](docs/task1-demo-guide.md), [live integration evidence](docs/task1-final-live-check-2026-11-24.md) and [remaining group actions](docs/task1-final-readiness.md). The 24 November review version is prepared for feedback; it is not a group approval or final submission.
+
 Every member commits their own work from their own GitHub account. Final percentages are agreed using commit history, issues and meeting records. See [docs/contribution-matrix-template.docx](docs/contribution-matrix-template.docx).
 
 
