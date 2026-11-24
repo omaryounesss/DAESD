@@ -9,5 +9,7 @@ Weekly fixed meeting: **Sunday, 17:00–19:00** (agreed in Meeting 02).
 | 03 | Sun 25 Oct 2026 | Weekly meeting | Sprint 1 review planning | [meeting-03.md](meeting-03.md) |
 | 04 | Mon 2 Nov 2026 | Zain and Saber’s house | i* modelling (lead: Mohamed Alabweh) | [meeting-04.md](meeting-04.md) |
 | 05 | Mon 9 Nov 2026 | Online | F1 operational BPMN walkthrough | [meeting-05.md](meeting-05.md) |
+| 06 | Sun 15 Nov 2026 | Online | Sprint 2 review planning | [meeting-06.md](meeting-06.md) |
+| 07 | Mon 23 Nov 2026 | Online | F2 worker walkthrough (lead: Omar Abdelaaty) | [meeting-07.md](meeting-07.md) |
 
 Notes taken by: Mohamed Hamdy (Member 5)
