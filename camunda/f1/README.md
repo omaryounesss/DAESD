@@ -12,7 +12,7 @@ camunda/
 ��� forms/                                 Camunda Forms used by the user tasks
 ```
 
-Both processes are Zain's operational models (`models/operational-bpmn/functionality-1/`) made executable, with the same pools, lanes, layout and names. Design notes, the list of changes, business rules, variables and the certification-service contract: [docs/camunda-variables.md](../docs/camunda-variables.md).
+Both processes refine Zain's operational models (`models/operational-bpmn/functionality-1/`). The connected publication task additionally uses the shared `f1-publish-product` worker to persist the catalogue before successful-publication notification. The shared inventory worker must be running. Design notes and the inherited certification contract: [docs/camunda-variables.md](../../docs/camunda-variables.md). Current persistence, evidence limits and setup: [combined guide](../../docs/task1-demo-guide.md).
 
 ## Deploying to Camunda 8 SaaS (Web Modeler)
 
