@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Date** | Monday 23 November 2026 |
-| **Time** | [time] |
-| **Location** | Online |
+| **Time** | 18:00 - 20:00 |
+| **Location** | Omar & Zain's House |
 | **Meeting lead** | Omar Abdelaaty (Member 4) |
 | **Notes by** | Mohamed Hamdy (Member 5) |
 
