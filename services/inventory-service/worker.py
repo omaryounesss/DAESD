@@ -1,6 +1,6 @@
 """F2 demonstration catalogue and Camunda 8 REST worker (Python 3.12, stdlib).
 
-SQLite state is local to this demo worker. F1 is not connected or modified.
+F1 publication and F2 inventory share this worker and its SQLite catalogue.
 Run only one worker against a given catalogue database.
 """
 import argparse
@@ -13,6 +13,37 @@ import sqlite3
 import time
 import urllib.request
 import urllib.error
+import urllib.parse
+
+_oauth_token=None
+_oauth_expires=0
+
+def setting(name,alias=None,default=None):
+    return os.environ.get(name) or (os.environ.get(alias) if alias else None) or default
+
+def authorization_header():
+    """Use existing API credentials; tokens stay in this process's memory."""
+    global _oauth_token,_oauth_expires
+    client=setting('CAMUNDA_CLIENT_ID','ZEEBE_CLIENT_ID')
+    secret=setting('CAMUNDA_CLIENT_SECRET','ZEEBE_CLIENT_SECRET')
+    if client and secret:
+        if not _oauth_token or time.monotonic()>=_oauth_expires:
+            endpoint=setting('CAMUNDA_OAUTH_URL','ZEEBE_AUTHORIZATION_SERVER_URL',
+                             'https://login.cloud.camunda.io/oauth/token')
+            if urllib.parse.urlparse(endpoint).scheme!='https':
+                raise ValueError('OAuth endpoint must use HTTPS')
+            body=urllib.parse.urlencode({'grant_type':'client_credentials','client_id':client,
+                'client_secret':secret,'audience':setting('CAMUNDA_TOKEN_AUDIENCE','ZEEBE_TOKEN_AUDIENCE','zeebe.camunda.io')}).encode()
+            req=urllib.request.Request(endpoint,body,{'Content-Type':'application/x-www-form-urlencoded'})
+            with urllib.request.urlopen(req,timeout=20) as response:token=json.loads(response.read())
+            _oauth_token=token['access_token']
+            _oauth_expires=time.monotonic()+max(1,float(token.get('expires_in',300))-30)
+        return 'Bearer '+_oauth_token
+    if os.environ.get('CAMUNDA_ACCESS_TOKEN'):return 'Bearer '+os.environ['CAMUNDA_ACCESS_TOKEN']
+    if os.environ.get('CAMUNDA_USERNAME'):
+        raw=os.environ['CAMUNDA_USERNAME']+':'+os.environ.get('CAMUNDA_PASSWORD','')
+        return 'Basic '+base64.b64encode(raw.encode()).decode()
+    return None
 
 KINDS = ('validate-quantity','validate-season','save-update','reduce-stock',
          'available','unavailable','notify-low','notify-zero','request-correction',
@@ -94,7 +125,7 @@ class Catalogue:
 
     def get(self,pid):
         row=self.db.execute('SELECT body FROM products WHERE id=?',(pid,)).fetchone()
-        if not row:raise ValueError('Unknown productId; seed an existing published product first')
+        if not row:raise ValueError('Unknown productId; publish through F1 or seed a demo product first')
         return json.loads(row[0])
 
     def save(self,p):
@@ -130,6 +161,43 @@ class Catalogue:
         return out
 
     def _handle(self,key,kind,v,now):
+        if kind=='publish-product':
+            if v.get('productDetailsValid') is not True:
+                raise ValueError('F1 publication requires validated product details')
+            listing=v.get('listingId')
+            product=dict(v.get('product') or {})
+            if not isinstance(listing,str) or not listing.strip() or product.get('listingId')!=listing:
+                raise ValueError('F1 product must have a matching listingId')
+            if not isinstance(v.get('traceabilityRecord'),dict) or not v['traceabilityRecord']:
+                raise ValueError('F1 publication requires a traceability record')
+            pid=v.get('productId') or listing
+            if not isinstance(pid,str) or not pid.strip():
+                raise ValueError('productId must be a nonempty string')
+            row=self.db.execute('SELECT body FROM products WHERE id=?',(pid,)).fetchone()
+            if row:
+                existing=json.loads(row[0])
+                if existing.get('listingId')!=listing:
+                    raise ValueError('productId already belongs to another catalogue product')
+                # A publication retry must never reset stock changed by F2.
+                product=existing
+            else:
+                if not integer(product.get('quantity')):
+                    raise ValueError('Invalid F1 quantity')
+                start=date.fromisoformat(product['availableFrom'])
+                end=date.fromisoformat(product['availableUntil'])
+                if end<start:raise ValueError('Invalid F1 season dates')
+                threshold=product.get('lowStockThreshold',5)
+                if not integer(threshold) or threshold==0:
+                    raise ValueError('Invalid low-stock threshold')
+                product.update(productId=pid,listingId=listing,revision=1,seasonVersion=1,
+                    lowStockThreshold=threshold,traceabilityRecord=v['traceabilityRecord'])
+                product['withinSeason']=start<=now<=end
+                product['available']=product['quantity']>0 and product['withinSeason']
+                product['publishedAt']=datetime.now(timezone.utc).isoformat()
+                self.save(product)
+                self._schedule(product)
+            return {'productId':pid,'listingStatus':'Published','cataloguePersisted':True,
+                    'catalogueEntry':{'product':product,'savedAt':product['publishedAt']}}
         if kind=='validate-quantity':
             errors=[]
             try:self.get(v.get('productId'))
@@ -190,15 +258,14 @@ class Catalogue:
         self.save(p)
         return {k:p[k] for k in ('productId','quantity','availableFrom','availableUntil','lowStockThreshold','withinSeason','available','revision')}
 
-def request(path,body):
-    base=os.environ.get('CAMUNDA_REST_ADDRESS','http://localhost:8080').rstrip('/')
+def request(path,body=None,method=None):
+    base=setting('CAMUNDA_REST_ADDRESS','ZEEBE_REST_ADDRESS','http://localhost:8080').rstrip('/')
     if not base.endswith('/v2'):base+='/v2'
     headers={'Content-Type':'application/json'}
-    if os.environ.get('CAMUNDA_ACCESS_TOKEN'):headers['Authorization']='Bearer '+os.environ['CAMUNDA_ACCESS_TOKEN']
-    elif os.environ.get('CAMUNDA_USERNAME'):
-        raw=os.environ['CAMUNDA_USERNAME']+':'+os.environ.get('CAMUNDA_PASSWORD','')
-        headers['Authorization']='Basic '+base64.b64encode(raw.encode()).decode()
-    req=urllib.request.Request(base+path,json.dumps(body).encode(),headers)
+    auth=authorization_header()
+    if auth:headers['Authorization']=auth
+    data=None if body is None else json.dumps(body).encode()
+    req=urllib.request.Request(base+path,data,headers,method=method)
     with urllib.request.urlopen(req,timeout=30) as response:
         return json.loads(response.read() or b'{}')
 
@@ -207,15 +274,17 @@ def run(catalogue):
         try:
             for action in catalogue.apply_due_seasons():
                 print('Season action: '+json.dumps(action),flush=True)
-            for kind in KINDS:
+            for kind in ('publish-product',)+KINDS:
                 catalogue.apply_due_seasons()
-                jobs=request('/jobs/activation',{'type':'f2-'+kind,'worker':'daesd-f2',
-                     'timeout':30000,'maxJobsToActivate':10,'requestTimeout':0}).get('jobs',[])
+                job_type='f1-publish-product' if kind=='publish-product' else 'f2-'+kind
+                jobs=request('/jobs/activation',{'type':job_type,'worker':'daesd-f2',
+                     'timeout':30000,'maxJobsToActivate':1,'requestTimeout':-1}).get('jobs',[])
                 for job in jobs:
                     key=job['jobKey']
                     try:
                         result=catalogue.handle(key,kind,job.get('variables',{}))
                         request(f'/jobs/{key}/completion',{'variables':result})
+                        print(f'Completed F2 job {key} ({kind}) for {result.get("productId",job.get("variables",{}).get("productId","unknown"))}',flush=True)
                     except Exception as exc:
                         print(f'F2 job {key} ({kind}): {exc}',flush=True)
                         request(f'/jobs/{key}/failure',{'retries':max(0,job.get('retries',1)-1),
@@ -232,3 +301,4 @@ if __name__=='__main__':
     if args.seed:catalogue.seed(json.loads(args.seed.read_text()));print('Demo product seeded.')
     elif args.scheduler_once:print(json.dumps(catalogue.apply_due_seasons(),indent=2))
     else:run(catalogue)
+

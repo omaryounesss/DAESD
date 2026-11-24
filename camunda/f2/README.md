@@ -42,7 +42,9 @@ Python 3.12+, standard library only. Use one worker and one SQLite demo catalogu
 3. Run `python services/inventory-service/worker.py` from the seed directory, or use the same explicit --db path for both commands.
 4. Deploy the two processes and administrator form together; the standalone producer form may also be included. The original timer starts activate on deployment.
 
-The catalogue is a separate seeded demo stub, not an F1 integration. Notifications/correction requests are recorded in SQLite; no real email/SMS is sent. Overselling fails without reducing stock below zero; duplicate orderId does not decrement twice.
+F1 publication and F2 now share the worker and catalogue. The connected F1 resources are in `camunda/f1`; publication uses job type `f1-publish-product` and completes only after SQLite commits. See [integration contract](../../docs/f1-f2-integration.md) and [24 November verification](../../docs/task1-completion-review-2026-11-24.md). Notifications/correction requests are recorded in SQLite; no real email/SMS is sent. Overselling fails without reducing stock below zero; duplicate orderId does not decrement twice.
+
+For the existing UWE cluster, run `services/inventory-service/start-f2.cmd` and leave its terminal open after CONNECTED. This launcher uses a consistent database path beside the worker and existing credentials outside the repository. Do not run a second worker or the seed command over an existing product. The generic instructions above are for a separately configured environment.
 
 ## Messages
 
@@ -64,8 +66,9 @@ Three invalid attempts route to administrator review; allowAnotherCorrection=tru
 
 ## Validation
 
-`python -m unittest discover -s tests -p 'test_*.py' -v`: 22 checks pass, including original graph/nesting/diagram preservation, explicit timer demo configuration, and eight scheduler scenarios.
+`python -m unittest discover -s tests -p 'test_*.py' -v`: 32 checks passed on 24 November, including original graph/nesting/diagram preservation, scheduler behaviour, connection handling and shared F1/F2 persistence.
 
-`cd tests/camunda-f2; mvn -o -Dtest=ModelValidationTest test`: Camunda parser/schema validation passes for the actual two BPMN files. The three engine route tests compile but cannot start here because local loopback sockets are blocked. No live F2 route is claimed as passed. Connect the worker and capture Tasklist/Operate evidence before claiming successful execution.
+The existing Maven parser/schema validation and engine route tests are separate from Python worker tests. Engine route tests were previously blocked by local socket restrictions; do not count them as passed. Live F2 results are recorded in [23 November evidence](../../docs/f2-live-validation-2026-11-23.md) and the 24 November review above. The seasonal BPMN starts and 48-hour review timeout still need successful execution evidence.
 
 Rebuild execution settings with `python scripts/build_f2.py`.
+
