@@ -89,6 +89,10 @@ called=nodes['Activity_052zj9p'].find('.//{'+Z+'}calledElement');called.set('pro
 # Keep the original seasonal business routes. The executable receives a
 # per-product scheduler message instead of using deployment-level fixed dates.
 # Season boundaries are published by the persistent scheduler, not fixed timers.
+nodes['Event_0g3ep4s'].find(tag('documentation')).text=(
+    'Triggered by the persistent scheduler at 00:00 UTC on the day after the '
+    'product\'s inclusive seasonal end date. The product becomes unavailable '
+    'regardless of its remaining stock quantity.')
 root.set('{http://camunda.org/schema/modeler/1.0}executionPlatformVersion','8.9.0')
 
 # Executable-only producer interaction, documented against the operational source.
@@ -101,6 +105,12 @@ correction=nodes['Event_0pab392']
 correction.tag=tag('userTask');correction.set('name','Correct stock and seasonal availability')
 for child in list(correction):
     if child.tag==tag('messageEventDefinition'):correction.remove(child)
+# Corrections arrive through the native form, not an incoming producer message.
+# Remove both the old semantic message flow and its diagram connector.
+for parent in root.iter():
+    for child in list(parent):
+        if child.get('id')=='Flow_0pg15sp' or child.get('bpmnElement')=='Flow_0pg15sp':
+            parent.remove(child)
 for task,fid,fields in [(submit,'f2-stock-update',('productId','quantity','availableFrom','availableUntil')),
                         (correction,'f2-stock-correction',('quantity','availableFrom','availableUntil'))]:
     x=ext(task);add(x,'userTask',ns=Z)
@@ -112,19 +122,17 @@ for ident,source,target in [('Flow_ProducerPrepare','Start_ProducerUpdate','Task
                             ('Flow_ProducerValidate','Task_SubmitStockUpdate','Gateway_158vgre')]:
     add(p,'sequenceFlow',{'id':ident,'sourceRef':source,'targetRef':target})
 lanes=p.find(tag('laneSet'))
-producer=add(lanes,'lane',{'id':'Lane_ProducerTasklist','name':'Producer via Tasklist'})
-for ident in ('Start_ProducerUpdate','Task_SubmitStockUpdate','Event_0pab392'):
-    add(producer,'flowNodeRef',text=ident)
-# Human correction belongs to Producer; catalogue preparation belongs to Platform.
 platform=nodes['Lane_1w7vtzs']
-for ref in list(platform):
-    if ref.text=='Event_0pab392':platform.remove(ref)
+platform.set('name','Marketplace operations')
+for ident in ('Start_ProducerUpdate','Task_SubmitStockUpdate','Event_0pab392'):
+    if not any(ref.text==ident for ref in platform.findall(tag('flowNodeRef'))):
+        add(platform,'flowNodeRef',text=ident)
 # Expand executable layout with one producer-interaction row. Source is untouched.
 plane=root.find('.//{'+D+'}BPMNPlane')
 for shape in plane.findall('{'+D+'}BPMNShape'):
     bounds=shape.find('{'+C+'}Bounds');ident=shape.get('bpmnElement')
     if ident=='Participant_041bi7k':bounds.set('height',str(float(bounds.get('height'))+180))
-    elif ident=='Lane_1w7vtzs':bounds.set('y',str(float(bounds.get('y'))+180))
+    elif ident=='Lane_1w7vtzs':bounds.set('height',str(float(bounds.get('height'))+180))
     elif float(bounds.get('y'))>=430:bounds.set('y',str(float(bounds.get('y'))+180))
     if ident=='Event_0pab392':
         bounds.set('x','1000');bounds.set('y','470');bounds.set('width','130');bounds.set('height','80')
@@ -144,20 +152,19 @@ for label in plane.findall('.//{'+D+'}BPMNLabel'):
 # Reattach incoming/outgoing edges to the resized correction user task.
 for edge in plane.findall('{'+D+'}BPMNEdge'):
     routes={'Flow_1lwoh2m':[(966,880),(980,880),(980,510),(1000,510)],
-            'Flow_12vo3s4':[(1065,550),(1065,580),(205,580),(205,780),(295,780)]}
+            'Flow_12vo3s4':[(1065,550),(1065,590),(230,590),(230,740),(320,740),(320,755)]}
     if edge.get('bpmnElement') in routes:
         for point in list(edge.findall('{'+I+'}waypoint')):edge.remove(point)
         for x,y in routes[edge.get('bpmnElement')]:add(edge,'waypoint',{'x':str(x),'y':str(y)},ns=I)
 def shape(ident,x,y,width,height):
     s=add(plane,'BPMNShape',{'id':ident+'_di','bpmnElement':ident},ns=D)
     add(s,'Bounds',dict(x=str(x),y=str(y),width=str(width),height=str(height)),ns=C)
-shape('Lane_ProducerTasklist',190,430,1808,180)
 shape('Start_ProducerUpdate',242,482,36,36)
-shape('Task_PrepareProducerUpdate',220,620,100,80)
+shape('Task_PrepareProducerUpdate',340,470,100,80)
 shape('Task_SubmitStockUpdate',480,470,100,80)
-for ident,points in [('Flow_ProducerPrepare',[(260,518),(260,620)]),
-                     ('Flow_ProducerSubmit',[(320,660),(450,660),(450,510),(480,510)]),
-                     ('Flow_ProducerValidate',[(530,550),(530,600),(210,600),(210,780),(295,780)])]:
+for ident,points in [('Flow_ProducerPrepare',[(278,500),(310,500),(310,510),(340,510)]),
+                     ('Flow_ProducerSubmit',[(440,510),(480,510)]),
+                     ('Flow_ProducerValidate',[(530,550),(530,710),(320,710),(320,755)])]:
     edge=add(plane,'BPMNEdge',{'id':ident+'_di','bpmnElement':ident},ns=D)
     for x,y in points:add(edge,'waypoint',{'x':str(x),'y':str(y)},ns=I)
 # Preparation is automated in the platform lane.

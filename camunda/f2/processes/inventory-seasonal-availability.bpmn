@@ -7,7 +7,6 @@
     <bpmn:participant id="Participant_1607470" name="Payment Provider" />
     <bpmn:messageFlow id="Flow_1rvp0uf" sourceRef="Participant_09s0n6r" targetRef="Event_0yt42mz" />
     <bpmn:messageFlow id="Flow_0bwrat3" sourceRef="Activity_07ct9ds" targetRef="Participant_09s0n6r" />
-    <bpmn:messageFlow id="Flow_0pg15sp" sourceRef="Participant_09s0n6r" targetRef="Event_0pab392" />
     <bpmn:messageFlow id="Flow_1a0vv9q" sourceRef="Activity_16idmkx" targetRef="Participant_1dxapzq" />
     <bpmn:messageFlow id="Flow_06filp0" sourceRef="Activity_00kvide" targetRef="Participant_1dxapzq" />
     <bpmn:messageFlow id="Flow_08tkeuv" sourceRef="Activity_0a0msio" targetRef="Participant_1dxapzq" />
@@ -16,7 +15,7 @@
   </bpmn:collaboration>
   <bpmn:process id="Process_0g8kz9d" isExecutable="true" name="F2 Inventory and Seasonal Availability">
     <bpmn:laneSet id="LaneSet_0tl3lwz">
-      <bpmn:lane id="Lane_1w7vtzs" name="Marketplace Platform">
+      <bpmn:lane id="Lane_1w7vtzs" name="Marketplace operations">
         <bpmn:flowNodeRef>Event_0yt42mz</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Gateway_0jq1bif</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Gateway_158vgre</bpmn:flowNodeRef>
@@ -53,6 +52,7 @@
         <bpmn:flowNodeRef>Gateway_0t48xvh</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Activity_00kvide</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Event_12htmiz</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_0pab392</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Activity_0t8snic</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Activity_052zj9p</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Gateway_06kd554</bpmn:flowNodeRef>
@@ -60,6 +60,8 @@
         <bpmn:flowNodeRef>Activity_07ct9ds</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Event_03jyftw</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Activity_0kb95hx</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Start_ProducerUpdate</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_SubmitStockUpdate</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Task_PrepareProducerUpdate</bpmn:flowNodeRef>
       </bpmn:lane>
       <bpmn:lane id="Lane_12fsm5f" name="Marketplace Administrator">
@@ -68,11 +70,6 @@
         <bpmn:flowNodeRef>Event_0ktx514</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Event_1xfog2v</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Event_1xmyihl</bpmn:flowNodeRef>
-      </bpmn:lane>
-      <bpmn:lane id="Lane_ProducerTasklist" name="Producer via Tasklist">
-        <bpmn:flowNodeRef>Start_ProducerUpdate</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Task_SubmitStockUpdate</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Event_0pab392</bpmn:flowNodeRef>
       </bpmn:lane>
     </bpmn:laneSet>
     <bpmn:startEvent id="Event_0yt42mz" name="Stock or season update received">
@@ -126,7 +123,7 @@
       <bpmn:incoming>Flow_1vhcup5</bpmn:incoming>
     </bpmn:endEvent>
     <bpmn:startEvent id="Event_0g3ep4s" name="Season end reached">
-      <bpmn:documentation>Triggered when a product reaches its configured seasonal end date. The date is retrieved from the Product Catalogue. The product becomes unavailable regardless of its remaining stock quantity.</bpmn:documentation>
+      <bpmn:documentation>Triggered by the persistent scheduler at 00:00 UTC on the day after the product's inclusive seasonal end date. The product becomes unavailable regardless of its remaining stock quantity.</bpmn:documentation>
       <bpmn:outgoing>Flow_1klohxp</bpmn:outgoing>
       <bpmn:messageEventDefinition id="TimerEventDefinition_0m3fr1e" messageRef="Message_Event_0g3ep4s" />
     </bpmn:startEvent>
@@ -517,7 +514,7 @@
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Lane_1w7vtzs_di" bpmnElement="Lane_1w7vtzs" isHorizontal="true">
-        <dc:Bounds x="190" y="610.0" width="1808" height="1250" />
+        <dc:Bounds x="190" y="430" width="1808" height="1430.0" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_1ghbjo7_di" bpmnElement="Event_0yt42mz">
@@ -806,10 +803,11 @@
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_12vo3s4_di" bpmnElement="Flow_12vo3s4">
         <di:waypoint x="1065" y="550" />
-        <di:waypoint x="1065" y="580" />
-        <di:waypoint x="205" y="580" />
-        <di:waypoint x="205" y="780" />
-        <di:waypoint x="295" y="780" />
+        <di:waypoint x="1065" y="590" />
+        <di:waypoint x="230" y="590" />
+        <di:waypoint x="230" y="740" />
+        <di:waypoint x="320" y="740" />
+        <di:waypoint x="320" y="755" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0m6cl3e_di" bpmnElement="Flow_0m6cl3e">
         <di:waypoint x="345" y="780.0" />
@@ -1107,10 +1105,6 @@
         <di:waypoint x="956" y="840.0" />
         <di:waypoint x="956" y="152" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0pg15sp_di" bpmnElement="Flow_0pg15sp">
-        <di:waypoint x="1030" y="152" />
-        <di:waypoint x="1030" y="862.0" />
-      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_1a0vv9q_di" bpmnElement="Flow_1a0vv9q">
         <di:waypoint x="1730" y="836.0" />
         <di:waypoint x="1730" y="1890.0" />
@@ -1137,34 +1131,30 @@
         <di:waypoint x="1287" y="1220.0" />
         <di:waypoint x="1287" y="1065.0" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNShape id="Lane_ProducerTasklist_di" bpmnElement="Lane_ProducerTasklist">
-        <dc:Bounds x="190" y="430" width="1808" height="180" />
-      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Start_ProducerUpdate_di" bpmnElement="Start_ProducerUpdate">
         <dc:Bounds x="242" y="482" width="36" height="36" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Task_PrepareProducerUpdate_di" bpmnElement="Task_PrepareProducerUpdate">
-        <dc:Bounds x="220" y="620" width="100" height="80" />
+        <dc:Bounds x="340" y="470" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Task_SubmitStockUpdate_di" bpmnElement="Task_SubmitStockUpdate">
         <dc:Bounds x="480" y="470" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flow_ProducerPrepare_di" bpmnElement="Flow_ProducerPrepare">
-        <di:waypoint x="260" y="518" />
-        <di:waypoint x="260" y="620" />
+        <di:waypoint x="278" y="500" />
+        <di:waypoint x="310" y="500" />
+        <di:waypoint x="310" y="510" />
+        <di:waypoint x="340" y="510" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_ProducerSubmit_di" bpmnElement="Flow_ProducerSubmit">
-        <di:waypoint x="320" y="660" />
-        <di:waypoint x="450" y="660" />
-        <di:waypoint x="450" y="510" />
+        <di:waypoint x="440" y="510" />
         <di:waypoint x="480" y="510" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_ProducerValidate_di" bpmnElement="Flow_ProducerValidate">
         <di:waypoint x="530" y="550" />
-        <di:waypoint x="530" y="600" />
-        <di:waypoint x="210" y="600" />
-        <di:waypoint x="210" y="780" />
-        <di:waypoint x="295" y="780" />
+        <di:waypoint x="530" y="710" />
+        <di:waypoint x="320" y="710" />
+        <di:waypoint x="320" y="755" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>

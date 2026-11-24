@@ -71,7 +71,8 @@ class ModelTests(unittest.TestCase):
         dst=E.parse(ROOT/'camunda/f2/processes/inventory-seasonal-availability.bpmn')
         orig={e.get('id'):e for e in src.iter() if e.get('id')}
         new={e.get('id'):e for e in dst.iter() if e.get('id')}
-        self.assertEqual({'MessageEventDefinition_0b0n9pd'},set(orig)-set(new))
+        removed={'MessageEventDefinition_0b0n9pd','Flow_0pg15sp','Flow_0pg15sp_di'}
+        self.assertEqual(removed,set(orig)-set(new))
         for key,e in orig.items():
             if e.tag==B+'sequenceFlow':
                 self.assertEqual((e.get('sourceRef'),e.get('targetRef')),(new[key].get('sourceRef'),new[key].get('targetRef')))
@@ -81,7 +82,7 @@ class ModelTests(unittest.TestCase):
                          'Flow_ProducerPrepare','Flow_ProducerSubmit','Flow_ProducerValidate'},business_added)
         self.assertEqual(B+'userTask',new['Event_0pab392'].tag)
         def ownership(t):
-            return {c.get('id'):e.get('id') for e in t.iter() for c in e if c.get('id') in orig and c.get('id')!='MessageEventDefinition_0b0n9pd'}
+            return {c.get('id'):e.get('id') for e in t.iter() for c in e if c.get('id') in orig and c.get('id') not in removed}
         self.assertEqual(ownership(src),ownership(dst))
 
     def test_tasklist_forms_limit_outputs_and_leave_paid_order_start(self):
@@ -127,10 +128,10 @@ class ModelTests(unittest.TestCase):
         di='{http://www.omg.org/spec/DD/20100524/DI}'
         r=E.parse(ROOT/'camunda/f2/processes/inventory-seasonal-availability.bpmn')
         lanes={lane.get('id'):{ref.text for ref in lane.findall(B+'flowNodeRef')} for lane in r.findall('.//'+B+'lane')}
-        self.assertIn('Event_0pab392',lanes['Lane_ProducerTasklist'])
-        self.assertNotIn('Event_0pab392',lanes['Lane_1w7vtzs'])
+        self.assertNotIn('Lane_ProducerTasklist',lanes)
+        self.assertIn('Event_0pab392',lanes['Lane_1w7vtzs'])
         self.assertIn('Task_PrepareProducerUpdate',lanes['Lane_1w7vtzs'])
-        self.assertNotIn('Task_PrepareProducerUpdate',lanes['Lane_ProducerTasklist'])
+        self.assertIn('Task_SubmitStockUpdate',lanes['Lane_1w7vtzs'])
         edge=r.find('.//'+d+"BPMNEdge[@bpmnElement='Flow_12vo3s4']")
         points=[(float(p.get('x')),float(p.get('y'))) for p in edge.findall(di+'waypoint')]
         shape=r.find('.//'+d+"BPMNShape[@bpmnElement='Event_0pab392']/"+dc+'Bounds')
