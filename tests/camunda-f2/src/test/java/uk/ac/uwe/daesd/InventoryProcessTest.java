@@ -19,6 +19,7 @@ class InventoryProcessTest {
       for(var file:paths.filter(Files::isRegularFile).toList()) {
         if(!file.toString().endsWith(".bpmn") && !file.toString().endsWith(".form")) continue;
         if(file.getFileName().toString().equals("check-product-stock-status.bpmn")) continue;
+        if(file.getFileName().toString().equals("place-order.bpmn")) continue; // alias; same process ID as horizontal
         // Embedded test engine uses job-based user tasks; deployment files keep native Tasklist tasks.
         var bytes=Files.readString(file).replaceAll("<zeebe:userTask\\s*/>", "").getBytes(java.nio.charset.StandardCharsets.UTF_8);
         deployment=deployment.addResourceBytes(bytes,file.getFileName().toString());
@@ -81,4 +82,3 @@ class InventoryProcessTest {
     assertThat(instance).isCompleted().hasPassedElement("Event_0pab392");
   }
 }
-

@@ -148,7 +148,7 @@ class CertificationServiceProcessTest {
       // Routing-only double. Shared SQLite publication has separate Python tests.
       for (var job : client.newActivateJobsCommand().jobType("f1-publish-product")
           .maxJobsToActivate(10).send().join().getJobs()) {
-        client.newCompleteCommand(job.getKey()).variables(Map.of("cataloguePersisted", true)).send().join();
+        client.newCompleteCommand(job.getKey()).variables(Map.of("cataloguePersisted", true, "listingStatus", "Published")).send().join();
       }
       engine.waitForIdleState(Duration.ofSeconds(5));
     } catch (Exception e) {
@@ -161,5 +161,4 @@ class CertificationServiceProcessTest {
     return Files.readString(CAMUNDA.resolve(file)).replaceAll("<zeebe:userTask\\s*/>", "").getBytes(StandardCharsets.UTF_8);
   }
 }
-
 
