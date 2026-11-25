@@ -1,3 +1,7 @@
+# Current candidate update — 25 November 2026
+
+See [current verification and native rehearsal](task1-verification-2026-11-25.md). This supersedes the older test counts and statements that no payment demonstration exists. The original register below is retained as historical evidence; its human reviews and final native deployment checks are not automatically closed. PR #64 remains the integration candidate.
+
 # Proposed merge order and submission checklist
 
 Prepared 24 November 2026. Read-only branch/PR inspection; no merge, retarget or main change was performed. Deadline from the supplied brief: before 14:00 UK time on 10 December 2026.
@@ -40,4 +44,3 @@ The review branch's 23 source-model blobs match main at inspection. This is a fi
 ## Recovery if feedback requires changes
 
 Make a follow-up commit/PR with the review decision and reason; keep existing evidence identifiable. Redeploy the relevant complete bundle and rerun affected scenarios when behaviour changes. Existing Camunda instances retain their deployed version. Use fresh synthetic IDs and preserve audit records. Avoid rewriting shared history or resetting demonstration stock indiscriminately.
-

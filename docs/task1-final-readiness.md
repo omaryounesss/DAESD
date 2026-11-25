@@ -1,3 +1,7 @@
+# Current candidate update — 25 November 2026
+
+See [current verification and native rehearsal](task1-verification-2026-11-25.md). This supersedes the older test counts and statements that no payment demonstration exists. The original register below is retained as historical evidence; its human reviews and final native deployment checks are not automatically closed. PR #64 remains the integration candidate.
+
 # Task 1 final readiness
 
 Submission deadline in the supplied brief: before 14:00 UK time on 10 December 2026. Keep all assessed artefacts and contribution evidence in the group repository. No report or recorded presentation is required; prepare a live demonstration and individual Q&A.
@@ -28,7 +32,7 @@ Do not add more forms merely to increase their count. Protect time for a coheren
 
 This is a classroom system, with a single shared SQLite worker and a local simulated notification channel. Producer product-ownership enforcement, real payment-provider orchestration, email/SMS and production high availability are not claimed. Overselling is currently rejected as an incident without negative stock; upstream compensation/reservation remains an integration design issue.
 
-## Final package checks - 24 November
+## Final package checks â€” 24 November
 
 - 45 Python tests pass after the layout/message cleanup.
 - Camunda parser/schema validation passes for all four F1/F2 executable BPMNs (one Java validation test).
@@ -50,4 +54,3 @@ The following proposals are prepared so members can review concrete work:
 Review version finalised on 24 November 2026: implementation, execution evidence, setup, traceability, demo/Q&A guide and LESP discussion are prepared for group feedback. This is the current review baseline; revise it through later commits if the group requests changes.
 
 The technical review package is prepared in PR #64. It is not merged to main and is not a submitted assessment. The group must review model semantics and authorship, agree integration order with PR #60, agree/sign contributions individually, confirm the selected functionalities/demo arrangement with the module team and rehearse individual answers. No approval, signature or retrospective authorship certification is implied by this register.
-

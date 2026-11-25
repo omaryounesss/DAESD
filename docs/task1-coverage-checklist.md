@@ -1,3 +1,7 @@
+# Current candidate update — 25 November 2026
+
+See [current verification and native rehearsal](task1-verification-2026-11-25.md). This supersedes the older test counts and statements that no payment demonstration exists. The original register below is retained as historical evidence; its human reviews and final native deployment checks are not automatically closed. PR #64 remains the integration candidate.
+
 # Task 1 coverage and evidence checklist
 
 Review version, 24 November 2026. Based on existing recorded checks; preparing this checklist does not run tests again. Complete means the stated evidence exists, not that all production requirements or module marks are guaranteed.
@@ -60,4 +64,3 @@ Review version, 24 November 2026. Based on existing recorded checks; preparing t
 | Before real Task 2 operation | Namespaced certification jobs/invalid-request handling, ownership permissions, payment compensation, real certification and notification channels | Task 2 design/integration |
 
 No new behaviour was added merely to tick a checklist. Unobserved paths remain labelled unobserved. Follow the [merge/submission plan](task1-merge-and-submission-plan.md) and [timed rehearsal](task1-timed-demonstration.md).
-

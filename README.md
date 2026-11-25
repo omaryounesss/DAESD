@@ -1,6 +1,6 @@
 # DaESD Group Project: Bristol Regional Food Network
 
-**Module:** UFCFTR-30-3 Distributed and Enterprise Software Development (UWE Bristol, 2026-27)
+**Module:** UFCFTR-30-3 Distributed and Enterprise Software Development (UWE Bristol, 2026â€“27)
 **Assessment:** Task 1, Group Project and In-class Demonstration
 **Use case:** Use Case 1, Producer Product Listing and Inventory Management
 
@@ -29,17 +29,17 @@ Full role breakdown: [docs/roles.md](docs/roles.md)
 
 ```
 DAESD/
-��� models/       Strategic BPMN, i* (SD/SR) and operational BPMN models
-��� camunda/      Executable Camunda 8 BPMN files and Forms
-��� services/     Simulated organic-certification service and other service-task code
-��� tests/        Test cases and testing evidence
-��� docs/         Sprint plan, roles, meeting notes, contribution matrix
-��� scripts/      Helper scripts (e.g. backlog setup)
+â”œâ”€â”€ models/       Strategic BPMN, i* (SD/SR) and operational BPMN models
+â”œâ”€â”€ camunda/      Executable Camunda 8 BPMN files and Forms
+â”œâ”€â”€ services/     Simulated organic-certification service and other service-task code
+â”œâ”€â”€ tests/        Test cases and testing evidence
+â”œâ”€â”€ docs/         Sprint plan, roles, meeting notes, contribution matrix
+â””â”€â”€ scripts/      Helper scripts (e.g. backlog setup)
 ```
 
 ## Project management
 
-- **Kanban board:** [DAESD - Use Case 1 Board](https://github.com/users/MOHAMEDAHMED947/projects/1)
+- **Kanban board:** [DAESD â€“ Use Case 1 Board](https://github.com/users/MOHAMEDAHMED947/projects/1)
 - **Backlog:** [GitHub Issues](https://github.com/omaryounesss/DAESD/issues), labelled by priority, type and member
 - **Sprints:** [GitHub Milestones](https://github.com/omaryounesss/DAESD/milestones) (Sprint 1, 2, 3)
 - **Sprint plan:** [docs/sprint-plan.md](docs/sprint-plan.md)
@@ -56,7 +56,7 @@ DAESD/
 
 ## Running the artefacts
 
-Start with the [Task 1 demonstration guide](docs/task1-demo-guide.md), [current readiness register](docs/task1-final-readiness.md), [F1 runbook](camunda/f1/README.md) and [F2 runbook](camunda/f2/README.md). The shared inventory worker persists F1 publications and handles F2 stock, season scheduling and notification delivery. Organic F1 routes also require the separate [certification service](services/certification-service/README.md).
+Start with the [25 November verification and final rehearsal](docs/task1-verification-2026-11-25.md), [ordering guide](docs/customer-ordering.md), [Task 1 demonstration guide](docs/task1-demo-guide.md), [current readiness register](docs/task1-final-readiness.md), [F1 runbook](camunda/f1/README.md) and [F2 runbook](camunda/f2/README.md). The shared inventory worker persists F1 publications and handles F2 stock, season scheduling and notification delivery. Organic F1 routes also require the separate [certification service](services/certification-service/README.md).
 
 Current integration is on `review/task1-integration-evidence-20261124` (PR #64), targeting the F2 feature branch. This is a review package, not a claim that main is submission-ready. Group review, merge order, signed contributions and the final rehearsal remain explicit gates.
 
@@ -65,5 +65,4 @@ Current integration is on `review/task1-integration-evidence-20261124` (PR #64),
 Task 1 review material: [legal, ethical, social and professional considerations](docs/task1-lesp-considerations.md), [demonstration guide](docs/task1-demo-guide.md), [live integration evidence](docs/task1-final-live-check-2026-11-24.md) and [remaining group actions](docs/task1-final-readiness.md). The 24 November review version is prepared for feedback; it is not a group approval or final submission.
 
 Every member commits their own work from their own GitHub account. Final percentages are agreed using commit history, issues and meeting records. See [docs/contribution-matrix-template.docx](docs/contribution-matrix-template.docx).
-
 

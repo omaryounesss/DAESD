@@ -35,7 +35,10 @@ class InventoryProcessTest {
   }
   io.camunda.zeebe.client.api.response.ProcessInstanceEvent update() throws Exception {
     var instance=client.newCreateInstanceCommand().bpmnProcessId("Process_0g8kz9d").latestVersion()
-      .startBeforeElement("Event_0yt42mz").variables(Map.of("productId","P1","updateId","U1")).send().join();idle();return instance;
+      // Isolate the validation/review routes after the message start. Zeebe does
+      // not support startBeforeElement on START_EVENT; the native producer entry
+      // is exercised separately by producerCanStartAndSubmitFromTasklist.
+      .startBeforeElement("Gateway_158vgre").variables(Map.of("productId","P1","updateId","U1")).send().join();idle();return instance;
   }
   @Test void validUpdateTraversesOriginalValidationAndAvailableRoute() throws Exception {
     var instance=update();
