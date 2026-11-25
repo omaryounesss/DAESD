@@ -66,24 +66,87 @@ class InventoryTests(unittest.TestCase):
         self.assertEqual(10,self.c.get('P1')['quantity'])
 
 class ModelTests(unittest.TestCase):
-    def test_original_nodes_and_flow_endpoints_preserved(self):
+    def test_documented_tasklist_refinements_preserve_business_routes(self):
         src=E.parse(ROOT/'models/operational-bpmn/functionality-2/inventory-seasonal-availability.bpmn')
         dst=E.parse(ROOT/'camunda/f2/processes/inventory-seasonal-availability.bpmn')
         orig={e.get('id'):e for e in src.iter() if e.get('id')}
         new={e.get('id'):e for e in dst.iter() if e.get('id')}
-        self.assertFalse(set(orig)-set(new))
+        removed={'MessageEventDefinition_0b0n9pd','Flow_0pg15sp','Flow_0pg15sp_di'}
+        self.assertEqual(removed,set(orig)-set(new))
         for key,e in orig.items():
             if e.tag==B+'sequenceFlow':
                 self.assertEqual((e.get('sourceRef'),e.get('targetRef')),(new[key].get('sourceRef'),new[key].get('targetRef')))
         added=set(new)-set(orig)
-        self.assertFalse([k for k in added if new[k].tag in (B+'task',B+'serviceTask',B+'startEvent',B+'endEvent',B+'subProcess',B+'sequenceFlow')])
-        for ident,e in orig.items():
-            if e.tag.endswith('BPMNDiagram'):
-                def signature(n):return (n.tag,tuple(sorted(n.attrib.items())),(n.text or '').strip(),tuple(signature(c) for c in n))
-                self.assertEqual(signature(e),signature(new[ident]))
+        business_added={k for k in added if new[k].tag in (B+'task',B+'userTask',B+'serviceTask',B+'startEvent',B+'endEvent',B+'subProcess',B+'sequenceFlow')}
+        self.assertEqual({'Start_ProducerUpdate','Task_PrepareProducerUpdate','Task_SubmitStockUpdate',
+                         'Flow_ProducerPrepare','Flow_ProducerSubmit','Flow_ProducerValidate'},business_added)
+        self.assertEqual(B+'userTask',new['Event_0pab392'].tag)
         def ownership(t):
-            return {c.get('id'):e.get('id') for e in t.iter() for c in e if c.get('id') in orig}
+            return {c.get('id'):e.get('id') for e in t.iter() for c in e if c.get('id') in orig and c.get('id') not in removed}
         self.assertEqual(ownership(src),ownership(dst))
+
+    def test_tasklist_forms_limit_outputs_and_leave_paid_order_start(self):
+        import json
+        root=E.parse(ROOT/'camunda/f2/processes/inventory-seasonal-availability.bpmn')
+        for ident,fid,outputs in [('Task_SubmitStockUpdate','f2-stock-update',{'productId','quantity','availableFrom','availableUntil'}),
+                                  ('Event_0pab392','f2-stock-correction',{'quantity','availableFrom','availableUntil'})]:
+            task=root.find(".//"+B+"userTask[@id='"+ident+"']")
+            self.assertIsNotNone(task.find('.//'+Z+'userTask'))
+            self.assertEqual(fid,task.find('.//'+Z+'formDefinition').get('formId'))
+            self.assertEqual(outputs,{e.get('target') for e in task.findall('.//'+Z+'output')})
+            form=json.loads((ROOT/'camunda/f2/forms'/ (fid+'.form')).read_text())
+            self.assertEqual(outputs,{c['key'] for c in form['components'] if 'key' in c})
+        self.assertIsNotNone(root.find(".//"+B+"startEvent[@id='Start_ProducerUpdate']"))
+        self.assertIsNotNone(root.find(".//"+B+"startEvent[@id='Event_0k7qpmm']/"+B+'messageEventDefinition'))
+        self.assertEqual(3,len(root.findall('.//'+B+'userTask')))
+
+    def test_external_labels_move_with_their_original_geometry(self):
+        d='{http://www.omg.org/spec/BPMN/20100524/DI}'
+        c='{http://www.omg.org/spec/DD/20100524/DC}'
+        src=E.parse(ROOT/'models/operational-bpmn/functionality-2/inventory-seasonal-availability.bpmn')
+        dst=E.parse(ROOT/'camunda/f2/processes/inventory-seasonal-availability.bpmn')
+        elements={e.get('bpmnElement'):e for e in dst.iter() if e.get('bpmnElement')}
+        checked=0
+        for original in src.iter():
+            label=original.find(d+'BPMNLabel/'+c+'Bounds')
+            if label is None:continue
+            ident=original.get('bpmnElement')
+            if ident=='Event_0pab392':
+                self.assertIsNone(elements[ident].find(d+'BPMNLabel'))
+                continue
+            actual=elements[ident].find(d+'BPMNLabel/'+c+'Bounds')
+            self.assertIsNotNone(actual,ident)
+            old_y=float(label.get('y'))
+            self.assertEqual(old_y+(180 if old_y>=430 else 0),float(actual.get('y')),ident)
+            self.assertEqual(float(label.get('x')),float(actual.get('x')),ident)
+            checked+=1
+        self.assertGreater(checked,10)
+
+    def test_responsibility_lanes_and_correction_edges_match_task_geometry(self):
+        d='{http://www.omg.org/spec/BPMN/20100524/DI}'
+        dc='{http://www.omg.org/spec/DD/20100524/DC}'
+        di='{http://www.omg.org/spec/DD/20100524/DI}'
+        r=E.parse(ROOT/'camunda/f2/processes/inventory-seasonal-availability.bpmn')
+        lanes={lane.get('id'):{ref.text for ref in lane.findall(B+'flowNodeRef')} for lane in r.findall('.//'+B+'lane')}
+        self.assertNotIn('Lane_ProducerTasklist',lanes)
+        self.assertIn('Event_0pab392',lanes['Lane_1w7vtzs'])
+        self.assertIn('Task_PrepareProducerUpdate',lanes['Lane_1w7vtzs'])
+        self.assertIn('Task_SubmitStockUpdate',lanes['Lane_1w7vtzs'])
+        edge=r.find('.//'+d+"BPMNEdge[@bpmnElement='Flow_12vo3s4']")
+        points=[(float(p.get('x')),float(p.get('y'))) for p in edge.findall(di+'waypoint')]
+        shape=r.find('.//'+d+"BPMNShape[@bpmnElement='Event_0pab392']/"+dc+'Bounds')
+        self.assertEqual(float(shape.get('y'))+float(shape.get('height')),points[0][1])
+        self.assertGreater(points[1][1],points[0][1])
+        self.assertTrue(all(a[0]==b[0] or a[1]==b[1] for a,b in zip(points,points[1:])))
+
+    def test_seasonal_starts_use_messages_without_fixed_dates(self):
+        r=E.parse(ROOT/'camunda/f2/processes/inventory-seasonal-availability.bpmn')
+        self.assertEqual([],r.findall('.//'+B+'timeDate'))
+        for ident,name in [('Event_0ii4tpz','f2-season-start'),('Event_0g3ep4s','f2-season-end')]:
+            event=r.find('.//'+B+"startEvent[@id='"+ident+"']")
+            definition=event.find(B+'messageEventDefinition')
+            self.assertIsNotNone(definition)
+            self.assertEqual(name,r.find('.//'+B+"message[@id='"+definition.get('messageRef')+"']").get('name'))
     def test_executable_contracts_and_all_gateway_routes(self):
         for path in (ROOT/'camunda/f2/processes').glob('*.bpmn'):
             root=E.parse(path)
@@ -105,3 +168,4 @@ class ModelTests(unittest.TestCase):
         self.assertEqual('check_product_stock_status',root.find('.//'+Z+'calledElement').get('processId'))
 
 if __name__=='__main__':unittest.main(verbosity=2)
+

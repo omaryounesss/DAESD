@@ -1,0 +1,33 @@
+{
+  "id": "f2-demo-payment",
+  "type": "default",
+  "schemaVersion": 19,
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.9.0",
+  "components": [
+    {
+      "id": "intro",
+      "type": "text",
+      "text": "# Simulated payment\nNo real money or card details. Choose the test outcome; the separate payment service records authorization, capture or cancellation."
+    },
+    {
+      "id": "outcome",
+      "type": "select",
+      "key": "demoPaymentOutcome",
+      "label": "Test payment outcome",
+      "values": [
+        {
+          "label": "Approve",
+          "value": "approve"
+        },
+        {
+          "label": "Decline",
+          "value": "decline"
+        }
+      ],
+      "validate": {
+        "required": true
+      }
+    }
+  ]
+}

@@ -1,51 +1,79 @@
 {
-  "schemaVersion": 16,
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.9.0",
+  "exporter": {
+    "name": "Camunda Web Modeler",
+    "version": "4c2418b"
+  },
+  "schemaVersion": 19,
   "id": "f2-stock-correction",
-  "type": "default",
   "components": [
     {
-      "type": "text",
       "text": "# Correct stock and season update",
-      "id": "heading"
-    },
-    {
       "type": "text",
-      "text": "Validation errors: {{validationErrors}}",
-      "id": "errors"
+      "id": "heading",
+      "layout": {
+        "row": "Row_0ntlv5i"
+      }
     },
     {
+      "text": "Product: {{productId}}. Update: {{updateId}}. Correct the fields below and submit to run validation again.",
+      "type": "text",
+      "id": "context",
+      "layout": {
+        "row": "Row_0bvsufz"
+      }
+    },
+    {
+      "text": "Validation errors: {{validationErrors}}",
+      "type": "text",
+      "id": "errors",
+      "layout": {
+        "row": "Row_18je04z"
+      }
+    },
+    {
+      "label": "Stock quantity",
       "type": "number",
       "key": "quantity",
-      "label": "Stock quantity",
       "id": "quantity",
       "validate": {
         "required": true,
         "min": 0
+      },
+      "layout": {
+        "row": "Row_0h263nk"
       }
     },
     {
-      "type": "textfield",
+      "subtype": "date",
+      "dateLabel": "Season start",
+      "type": "datetime",
+      "layout": {
+        "row": "Row_0jgoqn8",
+        "columns": null
+      },
+      "id": "Field_0n1vxvt",
       "key": "availableFrom",
-      "label": "Season start (YYYY-MM-DD)",
-      "id": "from",
       "validate": {
         "required": true
       }
     },
     {
-      "type": "textfield",
+      "subtype": "date",
+      "dateLabel": "Season end",
+      "type": "datetime",
+      "layout": {
+        "row": "Row_1g46uu3",
+        "columns": null
+      },
+      "id": "Field_0cdbo95",
       "key": "availableUntil",
-      "label": "Season end (YYYY-MM-DD, inclusive)",
-      "id": "until",
       "validate": {
         "required": true
       }
     }
   ],
-  "executionPlatform": "Camunda Cloud",
-  "executionPlatformVersion": "8.9.0",
-  "exporter": {
-    "name": "DaESD F2",
-    "version": "1.0"
-  }
+  "type": "default"
 }
+

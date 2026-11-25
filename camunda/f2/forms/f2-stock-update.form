@@ -1,0 +1,85 @@
+{
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.9.0",
+  "exporter": {
+    "name": "Camunda Web Modeler",
+    "version": "4c2418b"
+  },
+  "schemaVersion": 19,
+  "id": "f2-stock-update",
+  "components": [
+    {
+      "text": "# Update stock and seasonal availability",
+      "type": "text",
+      "id": "heading",
+      "layout": {
+        "row": "Row_17kvbah"
+      }
+    },
+    {
+      "text": "Choose an existing catalogue product. Enter the new total stock quantity, not the amount to add. Dates are inclusive. If no products are listed, publish a product through F1 first and start a new update.",
+      "type": "text",
+      "id": "instructions",
+      "layout": {
+        "row": "Row_00f53u0"
+      }
+    },
+    {
+      "label": "Product",
+      "type": "select",
+      "key": "productId",
+      "id": "product",
+      "valuesExpression": "=productOptions",
+      "searchable": true,
+      "validate": {
+        "required": true
+      },
+      "layout": {
+        "row": "Row_1jxtx58"
+      }
+    },
+    {
+      "label": "New total stock quantity",
+      "type": "number",
+      "key": "quantity",
+      "id": "quantity",
+      "validate": {
+        "required": true,
+        "min": 0
+      },
+      "layout": {
+        "row": "Row_05pk2tr"
+      }
+    },
+    {
+      "subtype": "date",
+      "dateLabel": "Season start",
+      "type": "datetime",
+      "layout": {
+        "row": "Row_1pwx0y4",
+        "columns": null
+      },
+      "id": "Field_0tq9koe",
+      "key": "availableFrom",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "subtype": "date",
+      "dateLabel": "Season end",
+      "type": "datetime",
+      "layout": {
+        "row": "Row_08h8wtu",
+        "columns": null
+      },
+      "id": "Field_19cbuia",
+      "key": "availableUntil",
+      "validate": {
+        "required": true
+      }
+    }
+  ],
+  "type": "default"
+}
+

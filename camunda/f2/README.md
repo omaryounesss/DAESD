@@ -1,71 +1,60 @@
-# F2 - Zain's original operational BPMN made executable
+# F2 executable inventory - current runbook
 
-Owner: Omar Fathy (M4). Operational design: Zain-Eldin Sharaf (M3).
+Current implementation: Tasklist producer forms, persistent message-based seasonal scheduling, and a separate local simulated Notification Service. Supersedes earlier fixed-timer/record-only instructions. Original operational source files are unchanged.
 
-[Corrected Camunda project](https://hub.camunda.io/workspaces/92fa97e5-a7b4-4f61-8f95-8e16edc03f4c/projects/2564c9ce-cd79-4e20-aad5-bc07b1f28945).
+## Start
 
-This replaces the rejected 22 November draft. Scanner tasks, wrapper subprocesses, recurring checks and the correction helper were removed. The rejected Camunda project was moved to Recently deleted. F1 and main remain unchanged.
+Stop the previous shared inventory worker with Ctrl+C. From ordinary PowerShell run:
 
-## Original design preserved
-
-Both executable BPMN files are generated from the untouched sources in `models/operational-bpmn/functionality-2/`. The main source blob is `4ba83ea042c09a4b9493e1c21a3226e80b444b69`.
-
-Automated comparison checks all original node IDs, every sequence-flow endpoint, nesting/ownership, and the entire BPMN diagram (bounds, waypoints, labels and pools/lanes). No business nodes, routes or subprocesses are added. The original generic "Keep product unavailable" task receives a service-task implementation with its original ID, name, position and connections.
-
-Added execution settings: executable flag; worker types; FEEL conditions/default paths; message definitions and correlation; administrator form reference; literal called process ID and returned variables; timer values. Target: Camunda 8.9.
-
-## Contents
-
-| File | Purpose |
-|---|---|
-| processes/inventory-seasonal-availability.bpmn | Full original operational F2 workflow with execution properties |
-| processes/check-product-stock-status.bpmn | Original reusable stock-check workflow with a worker type |
-| forms/f2-inventory-review.form | Linked to the original administrator task |
-| forms/f2-stock-correction.form | Standalone producer form specification/preview; not a Tasklist task |
-
-The original producer is a black-box pool. There is no producer user task to attach the correction form to. Corrections arrive at Zain's original message catch through an external producer UI or a demonstration message. No separate helper diagram is added.
-
-## Explicit seasonal timer demo configuration
-
-**Update:** the inventory service now also has a persistent per-product scheduler. It replaces schedules when dates change, rechecks current dates/stock and recovers missed actions after restart. See [scheduler behaviour and BPMN integration boundary](../../docs/f2-season-scheduler.md). It updates the service catalogue directly; it does not trigger Zain's seasonal BPMN routes. Those original fixed timer starts remain the separate single-product demonstration described below. They have not been silently replaced or described as dynamically rescheduled.
-
-A timer start creates a fresh instance without product variables from earlier updates. To preserve the original graph, these routes are configured for ONE demonstration product. Timer dates come from `services/inventory-service/demo-product.json`: season start at UTC midnight on availableFrom; season end at UTC midnight on the day after inclusive availableUntil.
-
-Set `F2_TIMER_PRODUCT_ID=P1` in the worker. Change the product/date configuration and rebuild/redeploy for a different demonstration. Updating dates in an instance does not reschedule deployment-level timers. Past timer dates may fire immediately on deployment. There is no recurring timer or catalogue scanner. Current catalogue dates are rechecked so stale timers cannot enable an out-of-season product. This is a limited timer demonstration, not a complete multi-product scheduler.
-
-## Run and deploy
-
-Python 3.12+, standard library only. Use one worker and one SQLite demo catalogue.
-
-1. Seed: `python services/inventory-service/worker.py --seed services/inventory-service/demo-product.json`.
-2. Set CAMUNDA_REST_ADDRESS, an existing authorized CAMUNDA_ACCESS_TOKEN for SaaS (or local CAMUNDA_USERNAME/CAMUNDA_PASSWORD), and F2_TIMER_PRODUCT_ID. Never commit credentials.
-3. Run `python services/inventory-service/worker.py` from the seed directory, or use the same explicit --db path for both commands.
-4. Deploy the two processes and administrator form together; the standalone producer form may also be included. The original timer starts activate on deployment.
-
-The catalogue is a separate seeded demo stub, not an F1 integration. Notifications/correction requests are recorded in SQLite; no real email/SMS is sent. Overselling fails without reducing stock below zero; duplicate orderId does not decrement twice.
-
-## Messages
-
-Publish through `/v2/messages/publication` with unique messageId, correlationKey and TTL. Update variables: productId, updateId, nonnegative integer quantity, availableFrom and availableUntil (YYYY-MM-DD). Paid-order variables: productId, orderId and positive integer purchasedQuantity.
-
-| Message | Purpose | Correlation key |
-|---|---|---|
-| f2-stock-update | Start original update route | productId |
-| f2-stock-corrected | Resume original correction catch | updateId of waiting update |
-| f2-order-paid | Start original stock-reduction route | productId |
-
-Example correction:
-
-```json
-{"name":"f2-stock-corrected","correlationKey":"U1","messageId":"U1-correction-1","timeToLive":60000,"variables":{"quantity":12,"availableFrom":"2026-11-01","availableUntil":"2026-12-31"}}
+```powershell
+& "C:\Users\omarf\Documents\Projects\DaESD\f2-work\services\inventory-service\activate-f2.cmd"
 ```
 
-Three invalid attempts route to administrator review; allowAnotherCorrection=true returns to corrections, false rejects. Original interrupting deadline: PT48H. Low stock: `0 < quantity < lowStockThreshold` (default 5); zero-stock notification is separate.
+This deploys exactly two BPMNs and three forms to the existing UWE cluster, then launches the shared F1/F2 worker and the local notification simulator. Expect DEPLOYED, CONNECTED and NOTIFICATIONS ready. Existing credentials remain outside the repository. Startup does not seed or reset products. Use one worker per catalogue.
 
-## Validation
+For a restart without deployment, run `services/inventory-service/start-f2.cmd`. The launcher starts its own hidden local notification process only if the service is absent, and stops that process when the worker exits. Receipts persist in its separate SQLite file.
 
-`python -m unittest discover -s tests -p 'test_*.py' -v`: 22 checks pass, including original graph/nesting/diagram preservation, explicit timer demo configuration, and eight scheduler scenarios.
+## Producer and administrator
 
-`cd tests/camunda-f2; mvn -o -Dtest=ModelValidationTest test`: Camunda parser/schema validation passes for the actual two BPMN files. The three engine route tests compile but cannot start here because local loopback sockets are blocked. No live F2 route is claimed as passed. Connect the worker and capture Tasklist/Operate evidence before claiming successful execution.
+In Tasklist > Processes, search `Process_0g8kz9d` and start the process. The worker loads catalogue product choices and generates an update ID. Complete **Update stock and seasonal availability** with a new total quantity and inclusive dates. Invalid dates open **Correct stock and seasonal availability** with errors and submitted values. Three invalid attempts open **Review invalid stock update**. Allow another correction or reject; review has an interrupting PT48H deadline.
 
-Rebuild execution settings with `python scripts/build_f2.py`.
+Forms are `f2-stock-update`, `f2-stock-correction`, `f2-inventory-review`. All use deployment binding and must be deployed with the BPMNs. Native Tasklist submission/correction and administrator allowance were verified on version 2 on 24 November; see the live report.
+
+Producer submission and correction are in the producer lane; catalogue loading and business logic are in the platform lane. The original black-box Producer participant remains in the operational artefact. This is an explicit executable refinement, not exact diagram identity. Product ownership enforcement remains outside this shared-cluster classroom demo.
+
+## Seasonal scheduling - one mechanism
+
+When F1 publishes a product or F2 changes its dates, `season_schedule` stores its start and end boundaries. End is due the day after inclusive availableUntil, in UTC. Date changes cancel pending/queued old-version entries.
+
+The worker queues due messages in its transactional outbox, publishes `f2-season-start` or `f2-season-end`, and Camunda runs the original seasonal routes. There are no fixed seasonal timeDate values in the executable BPMN and no direct scheduler write to availability. Jobs verify product/version/boundary, recalculate current stock/date availability and record execution. Missed start and end boundaries cannot re-enable an already ended season.
+
+States: pending = not yet due; queued = durable message intent or published message awaiting processing; completed = matching seasonal job applied; cancelled = superseded. Outbox `sent=1` means publication acknowledgement, not process completion.
+
+## Notification service
+
+Correction, low-stock and out-of-stock jobs commit a notification record and an outbox entry together. A dispatcher sends the entry to the separate HTTP simulation at `127.0.0.1:8765/notifications`. Its own SQLite receipts deduplicate event IDs and reject conflicting reuse. Failed requests retain attempts, next retry time and last error; stock changes are not rerun to retry notification delivery.
+
+BPMN send-task completion means **durably queued**. Outbox delivery and service receipts establish the later service acknowledgement. This is simulated notification delivery, not email or SMS and not proof a producer read a message. No external messages are sent to people.
+
+## Other messages and compatibility
+
+| Message | Variables | Purpose |
+| --- | --- | --- |
+| f2-stock-update | productId, updateId, quantity, availableFrom, availableUntil | Optional external stock-update integration; ordinary producer demo uses Tasklist |
+| f2-order-paid | productId, orderId, purchasedQuantity | Paid-order integration; use unique order IDs; no real payment is made here |
+| f2-season-start / f2-season-end | productId, seasonVersion, seasonBoundary, seasonDue | Scheduler-controlled seasonal routes |
+| f2-stock-corrected | Legacy updateId correlation | Only old version-1 instances still waiting for a correction message |
+
+Overselling currently produces an incident without negative stock; it is not a stock-zero notification. Duplicate orders do not deduct again. Payment reservation/refund/compensation design is an upstream integration responsibility, not implemented by this worker.
+
+## Verification and sources
+
+- `python -m unittest discover -s tests -p 'test_*.py'`: 45 passed after these changes; includes stale seasonal messages, queue/execute separation, restart/retry intent, notification lost-response deduplication, deployment bundle and lane/layout contracts.
+- From `tests/camunda-f2`: `mvn -o -Dtest=ModelValidationTest test`: parser/schema validation passed.
+- Embedded engine tests remain blocked here by loopback socket restrictions; their job-user-task substitution is not proof of native Tasklist rendering.
+- [Live version-2 evidence](../../docs/f2-tasklist-live-validation-2026-11-24.md)
+- [Executable mapping](../../docs/f2-tasklist-refinement.md)
+- Rebuild execution files using `python scripts/build_f2.py`.
+
+The group must review model consistency and acknowledge AI assistance with executable implementation, supporting code, forms and tests under the assessment brief. Final group artefact authorship, contribution signatures and presentation understanding cannot be supplied by automation.
+

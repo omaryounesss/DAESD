@@ -1,0 +1,52 @@
+{
+  "id": "f2-place-order",
+  "type": "default",
+  "schemaVersion": 19,
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.9.0",
+  "components": [
+    {
+      "id": "intro",
+      "type": "text",
+      "text": "# Place an order\nDemonstration only. Payment is simulated; no money is collected. If there are no products, publish an in-season product through F1 first."
+    },
+    {
+      "id": "product",
+      "type": "select",
+      "key": "productId",
+      "label": "Product",
+      "valuesExpression": "=productOptions",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "id": "quantity",
+      "type": "number",
+      "key": "purchasedQuantity",
+      "label": "Quantity",
+      "validate": {
+        "required": true,
+        "min": 1
+      }
+    },
+    {
+      "id": "name",
+      "type": "textfield",
+      "key": "customerName",
+      "label": "Customer name",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "id": "email",
+      "type": "textfield",
+      "key": "customerEmail",
+      "label": "Customer email (demo; no email is sent)",
+      "validate": {
+        "required": true
+      }
+    }
+  ]
+}

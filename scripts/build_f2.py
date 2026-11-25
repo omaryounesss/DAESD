@@ -42,9 +42,16 @@ def write(tree,path):
 tree=E.parse(SOURCE/'inventory-seasonal-availability.bpmn');root=tree.getroot();p=root.find(tag('process'))
 p.set('isExecutable','true');p.set('name','F2 Inventory and Seasonal Availability')
 nodes={e.get('id'):e for e in root.iter() if e.get('id')}
-messages=[('Event_0yt42mz','f2-stock-update',None),('Event_0k7qpmm','f2-order-paid',None),('Event_0pab392','f2-stock-corrected','=updateId')]
+messages=[('Event_0yt42mz','f2-stock-update',None),('Event_0k7qpmm','f2-order-paid',None),
+          ('Event_0ii4tpz','f2-season-start',None),('Event_0g3ep4s','f2-season-end',None)]
 for event,name,key in messages:
-    mid='Message_'+event;add(root,'message',{'id':mid,'name':name});definition=nodes[event].find(tag('messageEventDefinition'));definition.set('messageRef',mid)
+    mid='Message_'+event;add(root,'message',{'id':mid,'name':name})
+    definition=nodes[event].find(tag('messageEventDefinition'))
+    if definition is None:
+        definition=nodes[event].find(tag('timerEventDefinition'))
+        definition.tag=tag('messageEventDefinition')
+        for child in list(definition):definition.remove(child)
+    definition.set('messageRef',mid)
     if key:
         msg=root.find("bpmn:message[@id='%s']"%mid,{'bpmn':B});add(add(msg,'extensionElements'),'subscription',{'correlationKey':key},ns=Z)
 
@@ -75,18 +82,93 @@ for nid,kind in kinds.items():
     e=nodes[nid]
     if e.tag==tag('task'):e.tag=tag('serviceTask')
     job(e,kind)
-review=nodes['Activity_07qa1zf'];add(ext(review),'formDefinition',{'formId':'f2-inventory-review','bindingType':'latest'},ns=Z)
+review=nodes['Activity_07qa1zf'];add(ext(review),'formDefinition',{'formId':'f2-inventory-review','bindingType':'deployment'},ns=Z)
 add(nodes['TimerEventDefinition_01m6b8r'],'timeDuration',{},'PT48H')
 called=nodes['Activity_052zj9p'].find('.//{'+Z+'}calledElement');called.set('processId','check_product_stock_status');called.set('propagateAllChildVariables','true')
 
-# Keep Zain's exact timer starts and routes. A timer start has no product
-# variables: this demonstration binds the two starts to one configured product.
-# No scanner, wrapper subprocess, helper process or diagram movement is added.
-demo=json.loads((ROOT/'services/inventory-service/demo-product.json').read_text())
-from datetime import date, timedelta
-add(nodes['TimerEventDefinition_0k570q7'],'timeDate',{},demo['availableFrom']+'T00:00:00Z')
-add(nodes['TimerEventDefinition_0m3fr1e'],'timeDate',{},str(date.fromisoformat(demo['availableUntil'])+timedelta(days=1))+'T00:00:00Z')
+# Keep the original seasonal business routes. The executable receives a
+# per-product scheduler message instead of using deployment-level fixed dates.
+# Season boundaries are published by the persistent scheduler, not fixed timers.
+nodes['Event_0g3ep4s'].find(tag('documentation')).text=(
+    'Triggered by the persistent scheduler at 00:00 UTC on the day after the '
+    'product\'s inclusive seasonal end date. The product becomes unavailable '
+    'regardless of its remaining stock quantity.')
 root.set('{http://camunda.org/schema/modeler/1.0}executionPlatformVersion','8.9.0')
+
+# Executable-only producer interaction, documented against the operational source.
+# Message-based update/order starts remain; corrections now use native Tasklist.
+start=add(p,'startEvent',{'id':'Start_ProducerUpdate','name':'Producer starts inventory update'})
+prepare=add(p,'serviceTask',{'id':'Task_PrepareProducerUpdate','name':'Load catalogue products'})
+job(prepare,'prepare-update')
+submit=add(p,'userTask',{'id':'Task_SubmitStockUpdate','name':'Update stock and seasonal availability'})
+correction=nodes['Event_0pab392']
+correction.tag=tag('userTask');correction.set('name','Correct stock and seasonal availability')
+for child in list(correction):
+    if child.tag==tag('messageEventDefinition'):correction.remove(child)
+# Corrections arrive through the native form, not an incoming producer message.
+# Remove both the old semantic message flow and its diagram connector.
+for parent in root.iter():
+    for child in list(parent):
+        if child.get('id')=='Flow_0pg15sp' or child.get('bpmnElement')=='Flow_0pg15sp':
+            parent.remove(child)
+for task,fid,fields in [(submit,'f2-stock-update',('productId','quantity','availableFrom','availableUntil')),
+                        (correction,'f2-stock-correction',('quantity','availableFrom','availableUntil'))]:
+    x=ext(task);add(x,'userTask',ns=Z)
+    add(x,'formDefinition',{'formId':fid,'bindingType':'deployment'},ns=Z)
+    mapping=add(x,'ioMapping',ns=Z)
+    for field in fields:add(mapping,'output',{'source':'='+field,'target':field},ns=Z)
+for ident,source,target in [('Flow_ProducerPrepare','Start_ProducerUpdate','Task_PrepareProducerUpdate'),
+                            ('Flow_ProducerSubmit','Task_PrepareProducerUpdate','Task_SubmitStockUpdate'),
+                            ('Flow_ProducerValidate','Task_SubmitStockUpdate','Gateway_158vgre')]:
+    add(p,'sequenceFlow',{'id':ident,'sourceRef':source,'targetRef':target})
+lanes=p.find(tag('laneSet'))
+platform=nodes['Lane_1w7vtzs']
+platform.set('name','Marketplace operations')
+for ident in ('Start_ProducerUpdate','Task_SubmitStockUpdate','Event_0pab392'):
+    if not any(ref.text==ident for ref in platform.findall(tag('flowNodeRef'))):
+        add(platform,'flowNodeRef',text=ident)
+# Expand executable layout with one producer-interaction row. Source is untouched.
+plane=root.find('.//{'+D+'}BPMNPlane')
+for shape in plane.findall('{'+D+'}BPMNShape'):
+    bounds=shape.find('{'+C+'}Bounds');ident=shape.get('bpmnElement')
+    if ident=='Participant_041bi7k':bounds.set('height',str(float(bounds.get('height'))+180))
+    elif ident=='Lane_1w7vtzs':bounds.set('height',str(float(bounds.get('height'))+180))
+    elif float(bounds.get('y'))>=430:bounds.set('y',str(float(bounds.get('y'))+180))
+    if ident=='Event_0pab392':
+        bounds.set('x','1000');bounds.set('y','470');bounds.set('width','130');bounds.set('height','80')
+        # A task displays its name internally; the old event's external label
+        # would otherwise remain detached from the resized correction task.
+        label=shape.find('{'+D+'}BPMNLabel')
+        if label is not None:shape.remove(label)
+for edge in plane.findall('{'+D+'}BPMNEdge'):
+    for waypoint in edge.findall('{'+I+'}waypoint'):
+        if float(waypoint.get('y'))>=430:waypoint.set('y',str(float(waypoint.get('y'))+180))
+# External gateway/event/sequence-flow labels have independent DI bounds.
+# Translate them with the geometry, including Yes/No labels on routed edges.
+for label in plane.findall('.//{'+D+'}BPMNLabel'):
+    bounds=label.find('{'+C+'}Bounds')
+    if bounds is not None and float(bounds.get('y'))>=430:
+        bounds.set('y',str(float(bounds.get('y'))+180))
+# Reattach incoming/outgoing edges to the resized correction user task.
+for edge in plane.findall('{'+D+'}BPMNEdge'):
+    routes={'Flow_1lwoh2m':[(966,880),(980,880),(980,510),(1000,510)],
+            'Flow_12vo3s4':[(1065,550),(1065,590),(230,590),(230,740),(320,740),(320,755)]}
+    if edge.get('bpmnElement') in routes:
+        for point in list(edge.findall('{'+I+'}waypoint')):edge.remove(point)
+        for x,y in routes[edge.get('bpmnElement')]:add(edge,'waypoint',{'x':str(x),'y':str(y)},ns=I)
+def shape(ident,x,y,width,height):
+    s=add(plane,'BPMNShape',{'id':ident+'_di','bpmnElement':ident},ns=D)
+    add(s,'Bounds',dict(x=str(x),y=str(y),width=str(width),height=str(height)),ns=C)
+shape('Start_ProducerUpdate',242,482,36,36)
+shape('Task_PrepareProducerUpdate',340,470,100,80)
+shape('Task_SubmitStockUpdate',480,470,100,80)
+for ident,points in [('Flow_ProducerPrepare',[(278,500),(310,500),(310,510),(340,510)]),
+                     ('Flow_ProducerSubmit',[(440,510),(480,510)]),
+                     ('Flow_ProducerValidate',[(530,550),(530,710),(320,710),(320,755)])]:
+    edge=add(plane,'BPMNEdge',{'id':ident+'_di','bpmnElement':ident},ns=D)
+    for x,y in points:add(edge,'waypoint',{'x':str(x),'y':str(y)},ns=I)
+# Preparation is automated in the platform lane.
+add(platform,'flowNodeRef',text='Task_PrepareProducerUpdate')
 write(tree,'camunda/f2/processes/inventory-seasonal-availability.bpmn')
 t=E.parse(SOURCE/'check-product-stock-status.bpmn')
 t.getroot().set('{http://camunda.org/schema/modeler/1.0}executionPlatformVersion','8.9.0')
@@ -101,10 +183,19 @@ form('f2-inventory-review','Review invalid stock update',[
  {'type':'text','text':'Validation errors: {{validationErrors}}','id':'errors'},
  {'type':'checkbox','key':'allowAnotherCorrection','label':'Allow another producer correction','id':'allow','defaultValue':False},
  {'type':'textarea','key':'reviewNotes','label':'Review notes','id':'notes','validate':{'required':True}}])
-form('f2-stock-correction','Correct stock and season update',[
- {'type':'text','text':'Validation errors: {{validationErrors}}','id':'errors'},
- {'type':'number','key':'quantity','label':'Stock quantity','id':'quantity','validate':{'required':True,'min':0}},
- {'type':'textfield','key':'availableFrom','label':'Season start (YYYY-MM-DD)','id':'from','validate':{'required':True}},
- {'type':'textfield','key':'availableUntil','label':'Season end (YYYY-MM-DD, inclusive)','id':'until','validate':{'required':True}}])
+# Preserve the producer's exported date controls, IDs and layout. These source
+# forms are canonical; edit them when saving later Modeler form changes.
+for fid in ('f2-stock-correction','f2-stock-update'):
+    source=ROOT/'source/forms'/f'{fid}.form'
+    obj=json.loads(source.read_text(encoding='utf-8'))
+    expected={'quantity','availableFrom','availableUntil'}
+    if fid=='f2-stock-update':expected.add('productId')
+    keyed={c['key']:c for c in obj['components'] if 'key' in c}
+    if obj['id']!=fid or set(keyed)!=expected:
+        raise ValueError('Producer form has incompatible variable keys: '+fid)
+    for key in ('availableFrom','availableUntil'):
+        if (keyed[key].get('type'),keyed[key].get('subtype'))!=('datetime','date'):
+            raise ValueError('Producer season controls must be date-only: '+fid)
+    (ROOT/'camunda/f2/forms'/f'{fid}.form').write_bytes(source.read_bytes())
+print('Built two BPMN files and three forms with documented Tasklist refinements; operational sources untouched.')
 
-print('Built two BPMN files and two forms; original graph and diagram retained.')

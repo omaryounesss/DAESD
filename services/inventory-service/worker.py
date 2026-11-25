@@ -1,6 +1,6 @@
 """F2 demonstration catalogue and Camunda 8 REST worker (Python 3.12, stdlib).
 
-SQLite state is local to this demo worker. F1 is not connected or modified.
+F1 publication and F2 inventory share this worker and its SQLite catalogue.
 Run only one worker against a given catalogue database.
 """
 import argparse
@@ -13,8 +13,40 @@ import sqlite3
 import time
 import urllib.request
 import urllib.error
+import urllib.parse
+import uuid
 
-KINDS = ('validate-quantity','validate-season','save-update','reduce-stock',
+_oauth_token=None
+_oauth_expires=0
+
+def setting(name,alias=None,default=None):
+    return os.environ.get(name) or (os.environ.get(alias) if alias else None) or default
+
+def authorization_header():
+    """Use existing API credentials; tokens stay in this process's memory."""
+    global _oauth_token,_oauth_expires
+    client=setting('CAMUNDA_CLIENT_ID','ZEEBE_CLIENT_ID')
+    secret=setting('CAMUNDA_CLIENT_SECRET','ZEEBE_CLIENT_SECRET')
+    if client and secret:
+        if not _oauth_token or time.monotonic()>=_oauth_expires:
+            endpoint=setting('CAMUNDA_OAUTH_URL','ZEEBE_AUTHORIZATION_SERVER_URL',
+                             'https://login.cloud.camunda.io/oauth/token')
+            if urllib.parse.urlparse(endpoint).scheme!='https':
+                raise ValueError('OAuth endpoint must use HTTPS')
+            body=urllib.parse.urlencode({'grant_type':'client_credentials','client_id':client,
+                'client_secret':secret,'audience':setting('CAMUNDA_TOKEN_AUDIENCE','ZEEBE_TOKEN_AUDIENCE','zeebe.camunda.io')}).encode()
+            req=urllib.request.Request(endpoint,body,{'Content-Type':'application/x-www-form-urlencoded'})
+            with urllib.request.urlopen(req,timeout=20) as response:token=json.loads(response.read())
+            _oauth_token=token['access_token']
+            _oauth_expires=time.monotonic()+max(1,float(token.get('expires_in',300))-30)
+        return 'Bearer '+_oauth_token
+    if os.environ.get('CAMUNDA_ACCESS_TOKEN'):return 'Bearer '+os.environ['CAMUNDA_ACCESS_TOKEN']
+    if os.environ.get('CAMUNDA_USERNAME'):
+        raw=os.environ['CAMUNDA_USERNAME']+':'+os.environ.get('CAMUNDA_PASSWORD','')
+        return 'Basic '+base64.b64encode(raw.encode()).decode()
+    return None
+
+KINDS = ('validate-order','authorize-payment','settle-payment','commit-order','prepare-order','commit-demo-order','prepare-update','validate-quantity','validate-season','save-update','reduce-stock',
          'available','unavailable','notify-low','notify-zero','request-correction',
          'save-final','retrieve-stock')
 
@@ -40,6 +72,11 @@ class Catalogue:
           quantity INTEGER NOT NULL,
           PRIMARY KEY(product_id,season_version,kind));
         ''')
+        columns={r[1] for r in self.db.execute('PRAGMA table_info(outbox)')}
+        for name,definition in [('attempts','INTEGER NOT NULL DEFAULT 0'),('next_attempt','REAL NOT NULL DEFAULT 0'),
+                                ('last_error','TEXT'),('delivered_at','TEXT')]:
+            if name not in columns:self.db.execute('ALTER TABLE outbox ADD COLUMN '+name+' '+definition)
+        self.db.commit()
         # Upgrade existing demo catalogues without discarding products or job history.
         with self.db:
             self.db.execute('BEGIN IMMEDIATE')
@@ -52,7 +89,7 @@ class Catalogue:
 
     def _schedule(self,p):
         """Called inside the same transaction that persists the changed dates."""
-        self.db.execute("UPDATE season_schedule SET status='cancelled' WHERE product_id=? AND status='pending'",
+        self.db.execute("UPDATE season_schedule SET status='cancelled' WHERE product_id=? AND status IN ('pending','queued')",
                         (p['productId'],))
         boundaries={'start':p['availableFrom'],
                     'end':str(date.fromisoformat(p['availableUntil'])+timedelta(days=1))}
@@ -61,11 +98,10 @@ class Catalogue:
                             (p['productId'],p['seasonVersion'],kind,due))
 
     def apply_due_seasons(self,now=None):
-        """Apply persistent due actions, rechecking current dates and stock.
+        """Queue due seasonal messages atomically; Camunda jobs apply availability.
 
-        Service-side scheduler only: it does not start or alter Camunda routes.
-        Date boundaries are UTC, and end dates are inclusive. A restart processes
-        missed boundaries using current state, never enabling a season already over.
+        UTC boundaries, inclusive end dates. Queued is not completed: completion
+        is recorded only when the matching seasonal worker job executes.
         """
         instant=now or datetime.now(timezone.utc)
         if instant.tzinfo is None:raise ValueError('Scheduler time must include a timezone')
@@ -81,20 +117,68 @@ class Catalogue:
                 if version!=p['seasonVersion'] or boundary!=expected:
                     self.db.execute("UPDATE season_schedule SET status='cancelled' WHERE product_id=? AND season_version=? AND kind=?",
                                     (pid,version,kind));continue
-                p['withinSeason']=date.fromisoformat(p['availableFrom'])<=today<=date.fromisoformat(p['availableUntil'])
-                p['available']=p['quantity']>0 and p['withinSeason']
-                self.save(p)
-                self.db.execute('INSERT OR IGNORE INTO season_events VALUES (?,?,?,?,?,?,?)',
-                    (pid,version,kind,boundary,instant.isoformat(),int(p['available']),p['quantity']))
-                self.db.execute("UPDATE season_schedule SET status='completed' WHERE product_id=? AND season_version=? AND kind=?",
+                self.enqueue(f'season:{pid}:{version}:{kind}',{'channel':'season','productId':pid,
+                    'seasonVersion':version,'seasonBoundary':kind,'seasonDue':boundary})
+                self.db.execute("UPDATE season_schedule SET status='queued' WHERE product_id=? AND season_version=? AND kind=?",
                                 (pid,version,kind))
-                applied.append({'productId':pid,'seasonVersion':version,'boundary':kind,
-                                'available':p['available'],'quantity':p['quantity']})
+                applied.append({'productId':pid,'seasonVersion':version,'boundary':kind,'status':'queued'})
         return applied
+
+    def enqueue(self,ident,body):
+        self.db.execute('INSERT OR IGNORE INTO outbox(id,body) VALUES (?,?)',(ident,json.dumps(body)))
+
+    def notify(self,ident,event):
+        self.db.execute('INSERT OR IGNORE INTO notifications VALUES (?,?)',(ident,json.dumps(event)))
+        self.enqueue('notification:'+ident,{'channel':'notification','event':event})
+
+    def dispatch_outbox(self,publish,deliver,now=None):
+        """Network calls run outside business transactions; retry intent survives restart."""
+        clock=time.time() if now is None else now
+        rows=self.db.execute('SELECT id,body,attempts FROM outbox WHERE sent=0 AND next_attempt<=? ORDER BY rowid LIMIT 10',(clock,)).fetchall()
+        for ident,body,attempts in rows:
+            event=json.loads(body)
+            try:
+                if event['channel']=='season':
+                    p=self.get(event['productId'])
+                    schedule=self.db.execute('SELECT status FROM season_schedule WHERE product_id=? AND season_version=? AND kind=?',
+                        (event['productId'],event['seasonVersion'],event['seasonBoundary'])).fetchone()
+                    if p['seasonVersion']!=event['seasonVersion'] or not schedule or schedule[0]!='queued':
+                        with self.db:self.db.execute('UPDATE outbox SET sent=-1,last_error=? WHERE id=?',('Superseded seasonal action',ident))
+                        continue
+                    response=publish({'name':'f2-season-'+event['seasonBoundary'],'correlationKey':event['productId'],
+                        'messageId':ident,'timeToLive':86400000,'variables':{k:v for k,v in event.items() if k!='channel'}})
+                    if not response.get('messageKey'):raise ValueError('Message publication was not acknowledged')
+                elif event['channel']=='purchase':
+                    response=publish({'name':'f2-order-paid','correlationKey':event['productId'],
+                        'messageId':ident,'timeToLive':86400000,'variables':event['variables']})
+                    if not response.get('messageKey'):raise ValueError('Purchase publication was not acknowledged')
+                elif event['channel']=='notification':
+                    response=deliver({'id':ident,'event':event['event']})
+                    if response.get('accepted') is not True or response.get('id')!=ident:
+                        raise ValueError('Notification service did not acknowledge this event')
+                else:raise ValueError('Unknown outbox channel')
+                with self.db:self.db.execute('UPDATE outbox SET sent=1,attempts=?,last_error=NULL,delivered_at=? WHERE id=?',
+                    (attempts+1,datetime.now(timezone.utc).isoformat(),ident))
+            except (OSError,ValueError,KeyError) as exc:
+                with self.db:self.db.execute('UPDATE outbox SET attempts=?,next_attempt=?,last_error=? WHERE id=?',
+                    (attempts+1,clock+min(300,2**min(attempts+1,8)),str(exc),ident))
+
+    def apply_season_job(self,p,v,now):
+        version=v.get('seasonVersion');kind=v.get('seasonBoundary');due=v.get('seasonDue')
+        if kind not in ('start','end'):raise ValueError('Invalid seasonal boundary')
+        expected=p['availableFrom'] if kind=='start' else str(date.fromisoformat(p['availableUntil'])+timedelta(days=1))
+        if version!=p['seasonVersion'] or due!=expected or due>str(now):return False
+        p['withinSeason']=date.fromisoformat(p['availableFrom'])<=now<=date.fromisoformat(p['availableUntil'])
+        p['available']=p['quantity']>0 and p['withinSeason']
+        self.db.execute('INSERT OR IGNORE INTO season_events VALUES (?,?,?,?,?,?,?)',
+            (p['productId'],version,kind,due,datetime.now(timezone.utc).isoformat(),int(p['available']),p['quantity']))
+        self.db.execute("UPDATE season_schedule SET status='completed' WHERE product_id=? AND season_version=? AND kind=? AND status IN ('pending','queued')",
+            (p['productId'],version,kind))
+        return True
 
     def get(self,pid):
         row=self.db.execute('SELECT body FROM products WHERE id=?',(pid,)).fetchone()
-        if not row:raise ValueError('Unknown productId; seed an existing published product first')
+        if not row:raise ValueError('Unknown productId; publish through F1 or seed a demo product first')
         return json.loads(row[0])
 
     def save(self,p):
@@ -130,6 +214,88 @@ class Catalogue:
         return out
 
     def _handle(self,key,kind,v,now):
+        if kind in ('authorize-payment','settle-payment'):
+            return {k:v[k] for k in ('paymentAuthorized','paymentStatus')}
+        if kind=='validate-order':
+            try:
+                p=self.get(v.get('productId'));n=v.get('purchasedQuantity')
+                valid=integer(n) and n>0 and n<=p['quantity'] and date.fromisoformat(p['availableFrom'])<=now<=date.fromisoformat(p['availableUntil'])
+            except (ValueError,TypeError):valid=False
+            valid=valid and bool(str(v.get('customerName','')).strip()) and '@' in str(v.get('customerEmail',''))
+            return {'orderValid':valid,'orderAccepted':False,'orderResult':'Order rejected: check quantity, availability and customer details.','paymentStatus':'Not authorized'}
+        if kind=='commit-order':
+            return self._handle(key,'commit-demo-order',{**v,'demoPaymentApproved':v.get('paymentAuthorized') is True,'directOrdering':True},now)
+        if kind=='prepare-order':
+            products=[json.loads(row[0]) for row in self.db.execute('SELECT body FROM products ORDER BY id')]
+            return {'orderId':'ORDER-'+uuid.uuid4().hex,
+                'productOptions':[{'label':f"{p.get('name',p['productId'])} ({p['quantity']} available)",'value':p['productId']}
+                    for p in products if p['quantity']>0 and date.fromisoformat(p['availableFrom'])<=now<=date.fromisoformat(p['availableUntil'])]}
+        if kind=='commit-demo-order':
+            # Stock, job result and reliable F2 handoff share one transaction.
+            # Payment is simulated only; no money is collected.
+            def reject(reason):return {'orderAccepted':False,'orderResult':reason,'paymentStatus':'Not charged (demo)'}
+            order=v.get('orderId');n=v.get('purchasedQuantity');pid=v.get('productId')
+            if not isinstance(order,str) or not order.strip():return reject('Missing order ID.')
+            if not integer(n) or n==0:return reject('Quantity must be a positive whole number.')
+            if not str(v.get('customerName','')).strip() or '@' not in str(v.get('customerEmail','')):
+                return reject('Enter your name and a valid email address.')
+            if v.get('demoPaymentApproved') is not True:return reject('Simulated payment declined.')
+            try:p=self.get(pid)
+            except ValueError:return reject('Product does not exist.')
+            prior=self.db.execute('SELECT product_id,purchased FROM orders WHERE id=?',(order,)).fetchone()
+            if prior and prior!=(pid,n):return reject('Order ID already used for a different purchase.')
+            if not prior:
+                if not date.fromisoformat(p['availableFrom'])<=now<=date.fromisoformat(p['availableUntil']):
+                    return reject('Product is outside its availability season.')
+                if n>p['quantity']:return reject(f"Insufficient stock: {p['quantity']} available.")
+            result=self._handle(key,'reduce-stock',v,now)
+            if not v.get('directOrdering'):self.enqueue('purchase:'+order,{'channel':'purchase','productId':pid,
+                'variables':{'productId':pid,'orderId':order,'purchasedQuantity':n}})
+            return {**result,'orderAccepted':True,'paymentStatus':'Simulated approval; no money collected',
+                'orderResult':'Order accepted. Inventory updated; producer stock checks queued.'}
+        if kind=='prepare-update':
+            products=[json.loads(row[0]) for row in self.db.execute('SELECT body FROM products ORDER BY id')]
+            return {'updateId':'UI-'+uuid.uuid4().hex,'correctionAttempts':0,
+                    'validationErrors':[],
+                    'productOptions':[{'label':f"{p.get('name',p['productId'])} — {p['productId']} (stock {p['quantity']})",
+                                       'value':p['productId']} for p in products]}
+        if kind=='publish-product':
+            if v.get('productDetailsValid') is not True:
+                raise ValueError('F1 publication requires validated product details')
+            listing=v.get('listingId')
+            product=dict(v.get('product') or {})
+            if not isinstance(listing,str) or not listing.strip() or product.get('listingId')!=listing:
+                raise ValueError('F1 product must have a matching listingId')
+            if not isinstance(v.get('traceabilityRecord'),dict) or not v['traceabilityRecord']:
+                raise ValueError('F1 publication requires a traceability record')
+            pid=v.get('productId') or listing
+            if not isinstance(pid,str) or not pid.strip():
+                raise ValueError('productId must be a nonempty string')
+            row=self.db.execute('SELECT body FROM products WHERE id=?',(pid,)).fetchone()
+            if row:
+                existing=json.loads(row[0])
+                if existing.get('listingId')!=listing:
+                    raise ValueError('productId already belongs to another catalogue product')
+                # A publication retry must never reset stock changed by F2.
+                product=existing
+            else:
+                if not integer(product.get('quantity')):
+                    raise ValueError('Invalid F1 quantity')
+                start=date.fromisoformat(product['availableFrom'])
+                end=date.fromisoformat(product['availableUntil'])
+                if end<start:raise ValueError('Invalid F1 season dates')
+                threshold=product.get('lowStockThreshold',5)
+                if not integer(threshold) or threshold==0:
+                    raise ValueError('Invalid low-stock threshold')
+                product.update(productId=pid,listingId=listing,revision=1,seasonVersion=1,
+                    lowStockThreshold=threshold,traceabilityRecord=v['traceabilityRecord'])
+                product['withinSeason']=start<=now<=end
+                product['available']=product['quantity']>0 and product['withinSeason']
+                product['publishedAt']=datetime.now(timezone.utc).isoformat()
+                self.save(product)
+                self._schedule(product)
+            return {'productId':pid,'listingStatus':'Published','cataloguePersisted':True,
+                    'catalogueEntry':{'product':product,'savedAt':product['publishedAt']}}
         if kind=='validate-quantity':
             errors=[]
             try:self.get(v.get('productId'))
@@ -148,15 +314,17 @@ class Catalogue:
                     'correctionAttempts':v.get('correctionAttempts',0)+(0 if valid else 1)}
         if kind=='request-correction':
             if not v.get('updateId'):raise ValueError('updateId is required')
-            self.db.execute('INSERT OR IGNORE INTO notifications VALUES (?,?)',
-                (key,json.dumps({'type':'correction-requested','productId':v.get('productId'),
-                 'updateId':v['updateId'],'validationErrors':v.get('validationErrors',[])})))
+            self.notify(key,{'type':'correction-requested','productId':v.get('productId'),
+                 'updateId':v['updateId'],'validationErrors':v.get('validationErrors',[])})
             return {}
         pid=v.get('productId')
         if not pid and kind in ('retrieve-stock','unavailable'):
             pid=os.environ.get('F2_TIMER_PRODUCT_ID')
             if not pid:raise ValueError('Set F2_TIMER_PRODUCT_ID for original seasonal timer routes')
         p=self.get(pid)
+        if 'seasonVersion' in v and kind in ('available','unavailable','retrieve-stock'):
+            if not self.apply_season_job(p,v,now):
+                return {**{k:p[k] for k in ('productId','quantity','availableFrom','availableUntil','lowStockThreshold','withinSeason','available','revision')},'seasonActionApplied':False}
         if kind=='save-update':
             # Recheck independently; a forged process flag cannot persist invalid data.
             q=v.get('quantity');start=date.fromisoformat(v['availableFrom']);end=date.fromisoformat(v['availableUntil'])
@@ -180,8 +348,7 @@ class Catalogue:
             expected='low-stock' if kind=='notify-low' else 'out-of-stock'
             if actual==expected:
                 nid=f"{pid}:{p['revision']}:{actual}"
-                self.db.execute('INSERT OR IGNORE INTO notifications VALUES (?,?)',
-                                (nid,json.dumps({'productId':pid,'type':actual,'quantity':p['quantity']})))
+                self.notify(nid,{'productId':pid,'type':actual,'quantity':p['quantity']})
         elif kind not in ('available','unavailable','retrieve-stock','save-final'):
             raise ValueError('Unknown job type '+kind)
         # Re-evaluate current catalogue state rather than trusting stale workflow variables.
@@ -190,32 +357,49 @@ class Catalogue:
         self.save(p)
         return {k:p[k] for k in ('productId','quantity','availableFrom','availableUntil','lowStockThreshold','withinSeason','available','revision')}
 
-def request(path,body):
-    base=os.environ.get('CAMUNDA_REST_ADDRESS','http://localhost:8080').rstrip('/')
+def request(path,body=None,method=None):
+    base=setting('CAMUNDA_REST_ADDRESS','ZEEBE_REST_ADDRESS','http://localhost:8080').rstrip('/')
     if not base.endswith('/v2'):base+='/v2'
     headers={'Content-Type':'application/json'}
-    if os.environ.get('CAMUNDA_ACCESS_TOKEN'):headers['Authorization']='Bearer '+os.environ['CAMUNDA_ACCESS_TOKEN']
-    elif os.environ.get('CAMUNDA_USERNAME'):
-        raw=os.environ['CAMUNDA_USERNAME']+':'+os.environ.get('CAMUNDA_PASSWORD','')
-        headers['Authorization']='Basic '+base64.b64encode(raw.encode()).decode()
-    req=urllib.request.Request(base+path,json.dumps(body).encode(),headers)
+    auth=authorization_header()
+    if auth:headers['Authorization']=auth
+    data=None if body is None else json.dumps(body).encode()
+    req=urllib.request.Request(base+path,data,headers,method=method)
     with urllib.request.urlopen(req,timeout=30) as response:
         return json.loads(response.read() or b'{}')
+
+def deliver_notification(body):
+    # Separate simulated service; no email, SMS or credentials leave the machine.
+    req=urllib.request.Request('http://127.0.0.1:8765/notifications',json.dumps(body).encode(),
+        {'Content-Type':'application/json'})
+    with urllib.request.urlopen(req,timeout=5) as response:return json.loads(response.read())
 
 def run(catalogue):
     while True:
         try:
             for action in catalogue.apply_due_seasons():
                 print('Season action: '+json.dumps(action),flush=True)
-            for kind in KINDS:
+            catalogue.dispatch_outbox(lambda body:request('/messages/publication',body),deliver_notification)
+            for kind in ('publish-product',)+KINDS:
                 catalogue.apply_due_seasons()
-                jobs=request('/jobs/activation',{'type':'f2-'+kind,'worker':'daesd-f2',
-                     'timeout':30000,'maxJobsToActivate':10,'requestTimeout':0}).get('jobs',[])
+                job_type='f1-publish-product' if kind=='publish-product' else 'f2-'+kind
+                jobs=request('/jobs/activation',{'type':job_type,'worker':'daesd-f2',
+                     'timeout':30000,'maxJobsToActivate':1,'requestTimeout':-1}).get('jobs',[])
                 for job in jobs:
                     key=job['jobKey']
                     try:
-                        result=catalogue.handle(key,kind,job.get('variables',{}))
+                        variables=job.get('variables',{})
+                        if kind in ('authorize-payment','settle-payment'):
+                            action='authorize' if kind=='authorize-payment' else ('capture' if variables.get('orderAccepted') else 'void')
+                            payload={k:variables.get(k) for k in ('orderId','productId','purchasedQuantity','demoPaymentOutcome')}
+                            payload['action']=action
+                            req=urllib.request.Request('http://127.0.0.1:8766/payments',json.dumps(payload).encode(),{'Content-Type':'application/json'})
+                            with urllib.request.urlopen(req,timeout=5) as response:receipt=json.loads(response.read())
+                            if receipt.get('orderId')!=variables.get('orderId') or receipt.get('simulation') is not True:raise ValueError('Invalid payment receipt')
+                            variables={**variables,**receipt}
+                        result=catalogue.handle(key,kind,variables)
                         request(f'/jobs/{key}/completion',{'variables':result})
+                        print(f'Completed F2 job {key} ({kind}) for {result.get("productId",job.get("variables",{}).get("productId","unknown"))}',flush=True)
                     except Exception as exc:
                         print(f'F2 job {key} ({kind}): {exc}',flush=True)
                         request(f'/jobs/{key}/failure',{'retries':max(0,job.get('retries',1)-1),
