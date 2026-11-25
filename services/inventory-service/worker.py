@@ -46,7 +46,7 @@ def authorization_header():
         return 'Basic '+base64.b64encode(raw.encode()).decode()
     return None
 
-KINDS = ('prepare-update','validate-quantity','validate-season','save-update','reduce-stock',
+KINDS = ('validate-order','authorize-payment','settle-payment','commit-order','prepare-order','commit-demo-order','prepare-update','validate-quantity','validate-season','save-update','reduce-stock',
          'available','unavailable','notify-low','notify-zero','request-correction',
          'save-final','retrieve-stock')
 
@@ -148,6 +148,10 @@ class Catalogue:
                     response=publish({'name':'f2-season-'+event['seasonBoundary'],'correlationKey':event['productId'],
                         'messageId':ident,'timeToLive':86400000,'variables':{k:v for k,v in event.items() if k!='channel'}})
                     if not response.get('messageKey'):raise ValueError('Message publication was not acknowledged')
+                elif event['channel']=='purchase':
+                    response=publish({'name':'f2-order-paid','correlationKey':event['productId'],
+                        'messageId':ident,'timeToLive':86400000,'variables':event['variables']})
+                    if not response.get('messageKey'):raise ValueError('Purchase publication was not acknowledged')
                 elif event['channel']=='notification':
                     response=deliver({'id':ident,'event':event['event']})
                     if response.get('accepted') is not True or response.get('id')!=ident:
@@ -210,11 +214,50 @@ class Catalogue:
         return out
 
     def _handle(self,key,kind,v,now):
+        if kind in ('authorize-payment','settle-payment'):
+            return {k:v[k] for k in ('paymentAuthorized','paymentStatus')}
+        if kind=='validate-order':
+            try:
+                p=self.get(v.get('productId'));n=v.get('purchasedQuantity')
+                valid=integer(n) and n>0 and n<=p['quantity'] and date.fromisoformat(p['availableFrom'])<=now<=date.fromisoformat(p['availableUntil'])
+            except (ValueError,TypeError):valid=False
+            valid=valid and bool(str(v.get('customerName','')).strip()) and '@' in str(v.get('customerEmail',''))
+            return {'orderValid':valid,'orderAccepted':False,'orderResult':'Order rejected: check quantity, availability and customer details.','paymentStatus':'Not authorized'}
+        if kind=='commit-order':
+            return self._handle(key,'commit-demo-order',{**v,'demoPaymentApproved':v.get('paymentAuthorized') is True,'directOrdering':True},now)
+        if kind=='prepare-order':
+            products=[json.loads(row[0]) for row in self.db.execute('SELECT body FROM products ORDER BY id')]
+            return {'orderId':'ORDER-'+uuid.uuid4().hex,
+                'productOptions':[{'label':f"{p.get('name',p['productId'])} ({p['quantity']} available)",'value':p['productId']}
+                    for p in products if p['quantity']>0 and date.fromisoformat(p['availableFrom'])<=now<=date.fromisoformat(p['availableUntil'])]}
+        if kind=='commit-demo-order':
+            # Stock, job result and reliable F2 handoff share one transaction.
+            # Payment is simulated only; no money is collected.
+            def reject(reason):return {'orderAccepted':False,'orderResult':reason,'paymentStatus':'Not charged (demo)'}
+            order=v.get('orderId');n=v.get('purchasedQuantity');pid=v.get('productId')
+            if not isinstance(order,str) or not order.strip():return reject('Missing order ID.')
+            if not integer(n) or n==0:return reject('Quantity must be a positive whole number.')
+            if not str(v.get('customerName','')).strip() or '@' not in str(v.get('customerEmail','')):
+                return reject('Enter your name and a valid email address.')
+            if v.get('demoPaymentApproved') is not True:return reject('Simulated payment declined.')
+            try:p=self.get(pid)
+            except ValueError:return reject('Product does not exist.')
+            prior=self.db.execute('SELECT product_id,purchased FROM orders WHERE id=?',(order,)).fetchone()
+            if prior and prior!=(pid,n):return reject('Order ID already used for a different purchase.')
+            if not prior:
+                if not date.fromisoformat(p['availableFrom'])<=now<=date.fromisoformat(p['availableUntil']):
+                    return reject('Product is outside its availability season.')
+                if n>p['quantity']:return reject(f"Insufficient stock: {p['quantity']} available.")
+            result=self._handle(key,'reduce-stock',v,now)
+            if not v.get('directOrdering'):self.enqueue('purchase:'+order,{'channel':'purchase','productId':pid,
+                'variables':{'productId':pid,'orderId':order,'purchasedQuantity':n}})
+            return {**result,'orderAccepted':True,'paymentStatus':'Simulated approval; no money collected',
+                'orderResult':'Order accepted. Inventory updated; producer stock checks queued.'}
         if kind=='prepare-update':
             products=[json.loads(row[0]) for row in self.db.execute('SELECT body FROM products ORDER BY id')]
             return {'updateId':'UI-'+uuid.uuid4().hex,'correctionAttempts':0,
                     'validationErrors':[],
-                    'productOptions':[{'label':f"{p.get('name',p['productId'])} - {p['productId']} (stock {p['quantity']})",
+                    'productOptions':[{'label':f"{p.get('name',p['productId'])} — {p['productId']} (stock {p['quantity']})",
                                        'value':p['productId']} for p in products]}
         if kind=='publish-product':
             if v.get('productDetailsValid') is not True:
@@ -345,7 +388,16 @@ def run(catalogue):
                 for job in jobs:
                     key=job['jobKey']
                     try:
-                        result=catalogue.handle(key,kind,job.get('variables',{}))
+                        variables=job.get('variables',{})
+                        if kind in ('authorize-payment','settle-payment'):
+                            action='authorize' if kind=='authorize-payment' else ('capture' if variables.get('orderAccepted') else 'void')
+                            payload={k:variables.get(k) for k in ('orderId','productId','purchasedQuantity','demoPaymentOutcome')}
+                            payload['action']=action
+                            req=urllib.request.Request('http://127.0.0.1:8766/payments',json.dumps(payload).encode(),{'Content-Type':'application/json'})
+                            with urllib.request.urlopen(req,timeout=5) as response:receipt=json.loads(response.read())
+                            if receipt.get('orderId')!=variables.get('orderId') or receipt.get('simulation') is not True:raise ValueError('Invalid payment receipt')
+                            variables={**variables,**receipt}
+                        result=catalogue.handle(key,kind,variables)
                         request(f'/jobs/{key}/completion',{'variables':result})
                         print(f'Completed F2 job {key} ({kind}) for {result.get("productId",job.get("variables",{}).get("productId","unknown"))}',flush=True)
                     except Exception as exc:
@@ -364,4 +416,3 @@ if __name__=='__main__':
     if args.seed:catalogue.seed(json.loads(args.seed.read_text()));print('Demo product seeded.')
     elif args.scheduler_once:print(json.dumps(catalogue.apply_due_seasons(),indent=2))
     else:run(catalogue)
-

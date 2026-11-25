@@ -59,6 +59,7 @@ def main():
     os.environ.setdefault('F2_TIMER_PRODUCT_ID','P1')
     print('Worker running. Keep this terminal open; Ctrl+C stops it. No credentials are written to disk.',flush=True)
     notification_process=None
+    payment_process=None
     def check_notification_service():
         with urllib.request.urlopen('http://127.0.0.1:8765/health',timeout=2) as response:
             if json.loads(response.read()).get('service')!='daesd-notification-simulation':
@@ -75,8 +76,25 @@ def main():
                     time.sleep(0.1)
             else:raise ValueError('Notification Service did not become ready')
         print('NOTIFICATIONS: separate local simulated service is ready.',flush=True)
+        def check_payment_service():
+            with urllib.request.urlopen('http://127.0.0.1:8766/health',timeout=2) as response:
+                if json.loads(response.read()).get('service')!='daesd-payment-simulation':
+                    raise ValueError('Port 8766 is occupied by another service')
+        try:check_payment_service()
+        except urllib.error.URLError:
+            payment_process=subprocess.Popen([sys.executable,'-u',str(Path(__file__).with_name('payment_service.py'))],
+                creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0),stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+            for attempt in range(20):
+                try:check_payment_service();break
+                except urllib.error.URLError:
+                    if payment_process.poll() is not None:raise ValueError('Payment Service could not start; check port 8766')
+                    time.sleep(0.1)
+            else:raise ValueError('Payment Service did not become ready')
+        print('PAYMENTS: separate local simulated service is ready; no real money.',flush=True)
         worker.run(catalogue)
     finally:
+        if payment_process is not None:
+            payment_process.terminate();payment_process.wait(timeout=5)
         if notification_process is not None:
             notification_process.terminate();notification_process.wait(timeout=5)
 
@@ -87,4 +105,3 @@ if __name__=='__main__':
         print(f'Connection rejected: HTTP {exc.code}. Check cluster API permissions and existing credentials.',file=sys.stderr);sys.exit(1)
     except (ValueError,OSError,KeyError) as exc:
         print(f'Connection/setup failed: {exc}',file=sys.stderr);sys.exit(1)
-

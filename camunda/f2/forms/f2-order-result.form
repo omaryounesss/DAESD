@@ -1,0 +1,14 @@
+{
+  "id": "f2-order-result",
+  "type": "default",
+  "schemaVersion": 19,
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.9.0",
+  "components": [
+    {
+      "id": "heading",
+      "type": "text",
+      "text": "# Order result\n{{orderResult}}\n\nPayment: {{paymentStatus}}\n\nOrder reference: {{orderId}}\n\nProducer notifications are processed by the existing F2 purchase flow and simulated notification service."
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+name: Task 1 verification
+
+on:
+  push:
+    branches: ['review/**', 'feature/camunda-**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Business rules and deployment contracts
+        run: python -B -m unittest discover -s tests -v
+      - name: F1 process routes including correction and escalation
+        if: success() || failure()
+        working-directory: tests/camunda-f1
+        run: mvn -B -ntp test
+      - name: F2 process routes and BPMN validation
+        if: success() || failure()
+        working-directory: tests/camunda-f2
+        run: mvn -B -ntp test
+      - name: Certification registry and process integration
+        if: success() || failure()
+        working-directory: services/certification-service
+        run: mvn -B -ntp test
+      - name: Retain test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: task1-test-reports
+          path: '**/target/surefire-reports/'
