@@ -1,0 +1,79 @@
+{
+  "executionPlatform": "Camunda Cloud",
+  "executionPlatformVersion": "8.9.0",
+  "exporter": {
+    "name": "Camunda Web Modeler",
+    "version": "4c2418b"
+  },
+  "schemaVersion": 19,
+  "id": "f2-stock-correction",
+  "components": [
+    {
+      "text": "# Correct stock and season update",
+      "type": "text",
+      "id": "heading",
+      "layout": {
+        "row": "Row_0ntlv5i"
+      }
+    },
+    {
+      "text": "Product: {{productId}}. Update: {{updateId}}. Correct the fields below and submit to run validation again.",
+      "type": "text",
+      "id": "context",
+      "layout": {
+        "row": "Row_0bvsufz"
+      }
+    },
+    {
+      "text": "Validation errors: {{validationErrors}}",
+      "type": "text",
+      "id": "errors",
+      "layout": {
+        "row": "Row_18je04z"
+      }
+    },
+    {
+      "label": "Stock quantity",
+      "type": "number",
+      "key": "quantity",
+      "id": "quantity",
+      "validate": {
+        "required": true,
+        "min": 0
+      },
+      "layout": {
+        "row": "Row_0h263nk"
+      }
+    },
+    {
+      "subtype": "date",
+      "dateLabel": "Season start",
+      "type": "datetime",
+      "layout": {
+        "row": "Row_0jgoqn8",
+        "columns": null
+      },
+      "id": "Field_0n1vxvt",
+      "key": "availableFrom",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "subtype": "date",
+      "dateLabel": "Season end",
+      "type": "datetime",
+      "layout": {
+        "row": "Row_1g46uu3",
+        "columns": null
+      },
+      "id": "Field_0cdbo95",
+      "key": "availableUntil",
+      "validate": {
+        "required": true
+      }
+    }
+  ],
+  "type": "default"
+}
+

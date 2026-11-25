@@ -183,18 +183,19 @@ form('f2-inventory-review','Review invalid stock update',[
  {'type':'text','text':'Validation errors: {{validationErrors}}','id':'errors'},
  {'type':'checkbox','key':'allowAnotherCorrection','label':'Allow another producer correction','id':'allow','defaultValue':False},
  {'type':'textarea','key':'reviewNotes','label':'Review notes','id':'notes','validate':{'required':True}}])
-form('f2-stock-correction','Correct stock and season update',[
- {'type':'text','text':'Product: {{productId}}. Update: {{updateId}}. Correct the fields below and submit to run validation again.','id':'context'},
- {'type':'text','text':'Validation errors: {{validationErrors}}','id':'errors'},
- {'type':'number','key':'quantity','label':'Stock quantity','id':'quantity','validate':{'required':True,'min':0}},
- {'type':'textfield','key':'availableFrom','label':'Season start (YYYY-MM-DD)','id':'from','validate':{'required':True}},
- {'type':'textfield','key':'availableUntil','label':'Season end (YYYY-MM-DD, inclusive)','id':'until','validate':{'required':True}}])
-
-form('f2-stock-update','Update stock and seasonal availability',[
- {'type':'text','text':'Choose an existing catalogue product. Enter the new total stock quantity, not the amount to add. Dates are inclusive. If no products are listed, publish a product through F1 first and start a new update.','id':'instructions'},
- {'type':'select','key':'productId','label':'Product','id':'product','valuesExpression':'=productOptions','searchable':True,'validate':{'required':True}},
- {'type':'number','key':'quantity','label':'New total stock quantity','id':'quantity','validate':{'required':True,'min':0}},
- {'type':'textfield','key':'availableFrom','label':'Season start (YYYY-MM-DD)','id':'from','validate':{'required':True}},
- {'type':'textfield','key':'availableUntil','label':'Season end (YYYY-MM-DD, inclusive)','id':'until','validate':{'required':True}}])
+# Preserve the producer's exported date controls, IDs and layout. These source
+# forms are canonical; edit them when saving later Modeler form changes.
+for fid in ('f2-stock-correction','f2-stock-update'):
+    source=ROOT/'source/forms'/f'{fid}.form'
+    obj=json.loads(source.read_text(encoding='utf-8'))
+    expected={'quantity','availableFrom','availableUntil'}
+    if fid=='f2-stock-update':expected.add('productId')
+    keyed={c['key']:c for c in obj['components'] if 'key' in c}
+    if obj['id']!=fid or set(keyed)!=expected:
+        raise ValueError('Producer form has incompatible variable keys: '+fid)
+    for key in ('availableFrom','availableUntil'):
+        if (keyed[key].get('type'),keyed[key].get('subtype'))!=('datetime','date'):
+            raise ValueError('Producer season controls must be date-only: '+fid)
+    (ROOT/'camunda/f2/forms'/f'{fid}.form').write_bytes(source.read_bytes())
 print('Built two BPMN files and three forms with documented Tasklist refinements; operational sources untouched.')
 
